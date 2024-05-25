@@ -131,7 +131,8 @@ public class Model extends Observable {
         }
         return changed;
     }
-    /* modify on col.
+
+    /* modify one col.
     first: for every tile in this col , merge the adjacent tile which has the same value from up to down
     second: move every tile up to fill up every empty place
      */
