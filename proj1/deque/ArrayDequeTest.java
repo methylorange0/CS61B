@@ -2,6 +2,7 @@ package deque;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
+import edu.princeton.cs.algs4.StdRandom;
 
 
 /** Performs some basic linked list tests. */
@@ -127,5 +128,31 @@ public class ArrayDequeTest {
 
     }
 
+    @Test
+    public void randomizedTest() {
+        ArrayDeque<Integer> test1 = new ArrayDeque<>();
+        LinkedListDeque<Integer> test2 = new LinkedListDeque<>();
+        int N = 10000;
+        for (int i = 0; i < N; i++) {
+            int operation = StdRandom.uniform(0, 4);
+            if (operation == 0) {
+                int val = StdRandom.uniform(0, 100);
+                //System.out.println(" Last ");
+                test1.addLast(val);
+                test2.addLast(val);
+            } else if (operation == 1){
+                int val = StdRandom.uniform(0, 100);
+                //System.out.println(" First ");
+                test1.addFirst(val);
+                test2.addFirst(val);
+            } else if (operation == 2 && test1.size() > 0 && test2.size() > 0) {
+                //System.out.println(test1.size()+" First "+test2.size());
+                assertEquals(test1.removeFirst(), test2.removeFirst());
+            } else if (operation == 3 && test1.size() > 0 && test2.size() > 0) {
+                //System.out.println(test1.size()+" Last "+test2.size());
+                assertEquals(test1.removeLast(), test2.removeLast());
+            }
+        }
 
+    }
 }

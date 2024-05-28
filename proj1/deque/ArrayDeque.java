@@ -80,7 +80,7 @@ public class ArrayDeque<T> {
         items[nextfirst] = null;
         size -= 1;
 
-        if (size < (items.length / 4)) {
+        if (size < (items.length / 4) && items.length > 16) {
             Resize(items.length / 2);
         }
         return result;
@@ -96,7 +96,7 @@ public class ArrayDeque<T> {
         items[nextlast] = null;
         size -= 1;
 
-        if (size < (items.length / 4)) {
+        if (size < (items.length / 4) && items.length > 16) {
             Resize(items.length / 2);
         }
         return result;
@@ -105,5 +105,31 @@ public class ArrayDeque<T> {
     /** Gets the item at the given index. */
     public T get(int index) {
         return items[(nextfirst + 1 + index) % items.length];
+    }
+
+    /** Returns whether the parameter o is equal to the deque. */
+    public boolean equals(LinkedListDeque o) {
+        if (!(o instanceof LinkedListDeque)){
+            return false;
+        }
+        for ( int i = 0 ; i < size ; i++){
+            if (this.get(i) != o.get(i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Returns whether the parameter o is equal to the deque. */
+    public boolean equals(ArrayDeque o) {
+        if (!(o instanceof ArrayDeque)){
+            return false;
+        }
+        for ( int i = 0 ; i < size ; i++){
+            if (this.get(i) != o.get(i)){
+                return false;
+            }
+        }
+        return true;
     }
 }

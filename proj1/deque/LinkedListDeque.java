@@ -31,6 +31,7 @@ public class LinkedListDeque<T> {
         node.next = head.next;
         node.prev = head;
         head.next = node;
+        node.next.prev = node;
         size += 1;
     }
 
@@ -123,5 +124,31 @@ public class LinkedListDeque<T> {
         } else {
             return getRecursiveHelper(index - 1, p.next);
         }
+    }
+
+    /** Returns whether the parameter o is equal to the deque. */
+    public boolean equals(LinkedListDeque o) {
+        if (!(o instanceof LinkedListDeque)){
+            return false;
+        }
+        for ( int i = 0 ; i < size ; i++){
+            if (this.get(i) != o.get(i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Returns whether the parameter o is equal to the deque. */
+    public boolean equals(ArrayDeque o) {
+        if (!(o instanceof ArrayDeque)){
+            return false;
+        }
+        for ( int i = 0 ; i < size ; i++){
+            if (this.get(i) != o.get(i)){
+                return false;
+            }
+        }
+        return true;
     }
 }
