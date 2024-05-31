@@ -131,7 +131,6 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
         }
     }
 
-    /** Returns whether the parameter o is equal to the deque. */
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -147,7 +146,7 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
             return false;
         }
         for (int i = 0; i < size; i++) {
-            if (!this.get(i).equals(test)) {
+            if (!this.get(i).equals(test.get(i))) {
                 return false;
             }
         }
