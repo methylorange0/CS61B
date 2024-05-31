@@ -114,12 +114,13 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
     }
 
     /** Returns whether the parameter o is equal to the deque. */
-    public boolean equals(Deque<T> o) {
+    public boolean equals(Object o) {
         if (!(o instanceof Deque)) {
             return false;
         }
+        Deque<T> test = (Deque) o;
         for (int i = 0; i < size; i++) {
-            if (this.get(i) != o.get(i)) {
+            if (!this.get(i).equals(test)) {
                 return false;
             }
         }
@@ -136,7 +137,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
     private class ArrayIterator implements Iterator {
         private int pos;
 
-        public ArrayIterator() {
+        ArrayIterator() {
             pos = 0;
         }
 
