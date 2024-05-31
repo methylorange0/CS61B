@@ -1,75 +1,79 @@
 package deque;
 
-public class ArrayDeque<T> {
+import java.util.Iterator;
+
+public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
     /** T[] is the place where data is stored,
      * and size is the size of the deque. */
     private T[] items;
     private int size;
     private int nextfirst;
     private int nextlast;
+    private int initLength = 8;
 
     /** Create an empty ArrayDeque. */
     public ArrayDeque() {
-        int size = 0;
-        items = (T[]) new Object[8];
+        size = 0;
+        items = (T[]) new Object[initLength];
         nextlast = 0;
         nextfirst = items.length - 1;
     }
 
     /** Rearrange the capacity of the array. */
-    private void Resize(int cap) {
-        T[] new_items = (T[]) new Object[cap];
+    private void reSize(int cap) {
+        T[] newItems = (T[]) new Object[cap];
         int j = 0;
-        for (int i = (nextfirst + 1) % items.length ; j < size ; i = (i + 1) % items.length){
-            new_items[j] = items[i];
+        for (int i = (nextfirst + 1) % items.length; j < size; i = (i + 1) % items.length) {
+            newItems[j] = items[i];
             j += 1;
         }
         nextlast = size;
-        nextfirst = new_items.length - 1;
-        items = new_items;
+        nextfirst = newItems.length - 1;
+        items = newItems;
     }
 
+    @Override
     /** Adds an item to the front of the deque. */
     public void addFirst(T item) {
-        if (size == items.length){
-            Resize(size * 2);
+        if (size == items.length) {
+            reSize(size * 2);
         }
         items[nextfirst] = item;
         nextfirst = (nextfirst + items.length - 1) % items.length;
         size += 1;
     }
 
+    @Override
     /** Adds an item to the back of the deque. */
     public void addLast(T item) {
-        if (size == items.length){
-            Resize(size * 2);
+        if (size == items.length) {
+            reSize(size * 2);
         }
         items[nextlast] = item;
         nextlast = (nextlast + 1) % items.length;
         size += 1;
     }
 
-    /** Return true if deque is empty, false otherwise. */
-    public boolean isEmpty() {
-        return size == 0;
-    }
 
+    @Override
     /** Return the size of deque. */
     public int size() {
         return size;
     }
 
+    @Override
     /** Prints the items in the deque from first to the last. */
     public void printDeque() {
         int j = 0;
         int i = 0;
-        for (i = (nextfirst + 1) % items.length ; j < size - 1 ; i = (i + 1) % items.length){
+        for (i = (nextfirst + 1) % items.length; j < size - 1; i = (i + 1) % items.length) {
             System.out.print(items[i] + " ");
             j += 1;
         }
         System.out.println(items[i]);
     }
 
+    @Override
     /** Removes and returns the item at the front of the deque. */
     public T removeFirst() {
         if (size == 0) {
@@ -80,12 +84,13 @@ public class ArrayDeque<T> {
         items[nextfirst] = null;
         size -= 1;
 
-        if (size < (items.length / 4) && items.length > 16) {
-            Resize(items.length / 2);
+        if (size < (items.length / 4) && items.length > 2 * initLength) {
+            reSize(items.length / 2);
         }
         return result;
     }
 
+    @Override
     /** Removes and returns the item at the bak of the deque. */
     public T removeLast() {
         if (size == 0) {
@@ -96,40 +101,56 @@ public class ArrayDeque<T> {
         items[nextlast] = null;
         size -= 1;
 
-        if (size < (items.length / 4) && items.length > 16) {
-            Resize(items.length / 2);
+        if (size < (items.length / 4) && items.length > 2 * initLength) {
+            reSize(items.length / 2);
         }
         return result;
     }
 
+    @Override
     /** Gets the item at the given index. */
     public T get(int index) {
         return items[(nextfirst + 1 + index) % items.length];
     }
 
     /** Returns whether the parameter o is equal to the deque. */
-    public boolean equals(LinkedListDeque o) {
-        if (!(o instanceof LinkedListDeque)){
+    public boolean equals(Deque<T> o) {
+        if (!(o instanceof Deque)) {
             return false;
         }
-        for ( int i = 0 ; i < size ; i++){
-            if (this.get(i) != o.get(i)){
+        for (int i = 0; i < size; i++) {
+            if (this.get(i) != o.get(i)) {
                 return false;
             }
         }
         return true;
     }
 
-    /** Returns whether the parameter o is equal to the deque. */
-    public boolean equals(ArrayDeque o) {
-        if (!(o instanceof ArrayDeque)){
-            return false;
+
+    /** Returns an iterator. */
+    public Iterator<T> iterator() {
+        return new ArrayIterator();
+    }
+
+    /** The arrayIterator class. */
+    private class ArrayIterator implements Iterator {
+        private int pos;
+
+        public ArrayIterator() {
+            pos = 0;
         }
-        for ( int i = 0 ; i < size ; i++){
-            if (this.get(i) != o.get(i)){
-                return false;
+
+        public boolean hasNext() {
+            return pos < size;
+        }
+
+        public T next() {
+            if (!this.hasNext()) {
+                throw new ArrayIndexOutOfBoundsException("out of the array");
             }
+            T result = get(pos);
+            pos += 1;
+            return result;
         }
-        return true;
     }
 }

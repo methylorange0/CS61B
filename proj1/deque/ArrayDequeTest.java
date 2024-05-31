@@ -4,8 +4,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import edu.princeton.cs.algs4.StdRandom;
 
+import java.util.Iterator;
 
-/** Performs some basic linked list tests. */
+
+/** Performs some basic array list tests. */
 public class ArrayDequeTest {
 
     @Test
@@ -129,6 +131,7 @@ public class ArrayDequeTest {
     }
 
     @Test
+    /* Randomized test of these two deque. */
     public void randomizedTest() {
         ArrayDeque<Integer> test1 = new ArrayDeque<>();
         LinkedListDeque<Integer> test2 = new LinkedListDeque<>();
@@ -140,7 +143,7 @@ public class ArrayDequeTest {
                 //System.out.println(" Last ");
                 test1.addLast(val);
                 test2.addLast(val);
-            } else if (operation == 1){
+            } else if (operation == 1) {
                 int val = StdRandom.uniform(0, 100);
                 //System.out.println(" First ");
                 test1.addFirst(val);
@@ -153,6 +156,28 @@ public class ArrayDequeTest {
                 assertEquals(test1.removeLast(), test2.removeLast());
             }
         }
+    }
 
+    @Test
+    /* Check out if the iterator is fine. */
+    public void iteratorTest() {
+        ArrayDeque<Integer> test1 = new ArrayDeque<>();
+        Iterator<Integer> seer1 = test1.iterator();
+        assertEquals(false, seer1.hasNext());
+        for (int i = 0; i < 100; i++) {
+            test1.addLast(i);
+        }
+        assertEquals(true, seer1.hasNext());
+        for (int i = 0; i < 100; i++) {
+            int result = seer1.next();
+            assertEquals(i, result);
+        }
+        assertEquals(false, seer1.hasNext());
+
+        int testnumber = 0;
+        for (int i : test1) {
+            assertEquals(testnumber, i);
+            testnumber += 1;
+        }
     }
 }

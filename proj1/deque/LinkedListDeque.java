@@ -1,12 +1,14 @@
 package deque;
 
-public class LinkedListDeque<T> {
+import java.util.Iterator;
+
+public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
 
     /** This is where data is stored. */
     private class LinkedNode {
-        public LinkedNode prev;
-        public T val;
-        public LinkedNode next;
+        private LinkedNode prev;
+        private T val;
+        private LinkedNode next;
     }
 
     /** Head is a pointer to the LinkedNode, size is the size of the deque.*/
@@ -21,10 +23,11 @@ public class LinkedListDeque<T> {
         size = 0;
     }
 
+    @Override
     /** Adds an item in the front of the deque. */
     public void addFirst(T item) {
         LinkedNode node = new LinkedNode();
-        if (size == 0){
+        if (size == 0) {
             head.prev = node;
         }
         node.val = item;
@@ -35,10 +38,11 @@ public class LinkedListDeque<T> {
         size += 1;
     }
 
+    @Override
     /** Adds an item to the back of the deque. */
     public void addLast(T item) {
         LinkedNode node = new LinkedNode();
-        if (size == 0){
+        if (size == 0) {
             head.next = node;
         }
         node.val = item;
@@ -49,29 +53,28 @@ public class LinkedListDeque<T> {
         size += 1;
     }
 
-    /** Return true if deque is empty, false otherwise. */
-    public boolean isEmpty() {
-        return size == 0;
-    }
 
+    @Override
     /** Return the size of deque. */
     public int size() {
         return size;
     }
 
+    @Override
     /** Prints the items in the deque from first to the last. */
     public void printDeque() {
         LinkedNode helper = head.next;
-        for (int i = 0 ; i < size - 1 ; i++){
+        for (int i = 0; i < size - 1; i++) {
             System.out.print(helper.val + " ");
             helper = helper.next;
         }
         System.out.println(helper.val);
     }
 
+    @Override
     /** Removes and returns the item at the front of the deque. */
     public T removeFirst() {
-        if (size == 0){
+        if (size == 0) {
             return null;
         }
         LinkedNode target = head.next;
@@ -83,9 +86,10 @@ public class LinkedListDeque<T> {
         return result;
     }
 
+    @Override
     /** Removes and returns the item at the back of the deque. */
     public T removeLast() {
-        if (size == 0){
+        if (size == 0) {
             return null;
         }
         LinkedNode target = head.prev;
@@ -97,29 +101,30 @@ public class LinkedListDeque<T> {
         return result;
     }
 
+    @Override
     /** Gets the item at the given index. */
-    public T get(int index){
-        if (index >= size){
+    public T get(int index) {
+        if (index >= size) {
             return null;
         }
         LinkedNode target = head.next;
-        for (int i = 0 ; i < index ; i++){
+        for (int i = 0; i < index; i++) {
             target = target.next;
         }
         return target.val;
     }
 
     /** Same as get, but uses recursion. */
-    public T getRecursive(int index){
-        if (index >= size){
+    public T getRecursive(int index) {
+        if (index >= size) {
             return null;
         }
         return getRecursiveHelper(index, head.next);
     }
 
     /** The helper of getRecursive. */
-    private T getRecursiveHelper(int index, LinkedNode p){
-        if (index == 0){
+    private T getRecursiveHelper(int index, LinkedNode p) {
+        if (index == 0) {
             return p.val;
         } else {
             return getRecursiveHelper(index - 1, p.next);
@@ -127,28 +132,42 @@ public class LinkedListDeque<T> {
     }
 
     /** Returns whether the parameter o is equal to the deque. */
-    public boolean equals(LinkedListDeque o) {
-        if (!(o instanceof LinkedListDeque)){
+    public boolean equals(Deque<T> o) {
+        if (!(o instanceof Deque)) {
             return false;
         }
-        for ( int i = 0 ; i < size ; i++){
-            if (this.get(i) != o.get(i)){
+        for (int i = 0; i < size; i++) {
+            if (this.get(i) != o.get(i)) {
                 return false;
             }
         }
         return true;
     }
 
-    /** Returns whether the parameter o is equal to the deque. */
-    public boolean equals(ArrayDeque o) {
-        if (!(o instanceof ArrayDeque)){
-            return false;
+    /** Returns an iterator. */
+    public Iterator<T> iterator() {
+        return new LinkedIterator();
+    }
+
+    /** The arrayIterator class. */
+    private class LinkedIterator implements Iterator {
+        private int pos;
+
+        public LinkedIterator() {
+            pos = 0;
         }
-        for ( int i = 0 ; i < size ; i++){
-            if (this.get(i) != o.get(i)){
-                return false;
+
+        public boolean hasNext() {
+            return pos < size;
+        }
+
+        public T next() {
+            if (!this.hasNext()) {
+                throw new ArrayIndexOutOfBoundsException("out of the array");
             }
+            T result = get(pos);
+            pos += 1;
+            return result;
         }
-        return true;
     }
 }
