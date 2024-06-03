@@ -64,7 +64,9 @@ public class CapersRepository {
      * Also prints out the dog's information using toString().
      */
     public static void makeDog(String name, String breed, int age) {
-        // TODO
+        Dog newDog = new Dog(name, breed, age);
+        newDog.saveDog();
+        System.out.println(newDog.toString());
     }
 
     /**
@@ -74,6 +76,11 @@ public class CapersRepository {
      * @param name String name of the Dog whose birthday we're celebrating.
      */
     public static void celebrateBirthday(String name) {
-        // TODO
+        File happyDogFile = join(".capers", "dogs", name);
+        if(happyDogFile.exists()) {
+            Dog happyDog = readObject(happyDogFile, Dog.class);
+            happyDog.haveBirthday();
+            writeObject(happyDogFile, happyDog);
+        }
     }
 }
