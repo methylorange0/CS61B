@@ -150,10 +150,12 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
             pos = 0;
         }
 
+        @Override
         public boolean hasNext() {
             return pos < size;
         }
 
+        @Override
         public T next() {
             if (!this.hasNext()) {
                 throw new ArrayIndexOutOfBoundsException("out of the array");
