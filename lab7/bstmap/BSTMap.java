@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
-public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
+public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     /** Every K-V pair store in one BSTNode. */
     private class BSTNode<K, V> {
@@ -49,9 +49,9 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
     private boolean containsKey(K key, BSTNode root) {
         if (root == null) {
             return false;
-        } else if (key.compareTo(root.key) < 0) {
+        } else if (key.compareTo((K) root.key) < 0) {
             return containsKey(key, root.left);
-        } else if (key.compareTo(root.key) > 0) {
+        } else if (key.compareTo((K) root.key) > 0) {
             return containsKey(key, root.right);
         }
         return true;
@@ -69,9 +69,9 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
     private V get(K key, BSTNode root) {
         if (root == null) {
             return null;
-        } else if (key.compareTo(root.key) < 0) {
+        } else if (key.compareTo((K) root.key) < 0) {
             return (V) get(key, root.left);
-        } else if (key.compareTo(root.key) > 0) {
+        } else if (key.compareTo((K) root.key) > 0) {
             return (V) get(key, root.right);
         }
         return (V) root.val;
@@ -94,9 +94,9 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
         if (root == null) {
             size += 1;
             return new BSTNode(key, value);
-        } else if (key.compareTo(root.key) < 0) {
+        } else if (key.compareTo((K) root.key) < 0) {
             root.left = put(key, value, root.left);
-        } else if (key.compareTo(root.key) > 0) {
+        } else if (key.compareTo((K) root.key) > 0) {
             root.right = put(key, value, root.right);
         }
         return root;
@@ -128,6 +128,22 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
     @Override
     public Iterator<K> iterator() {
         throw new UnsupportedOperationException("Sorry, I haven't finish iterator() method");
+    }
+
+    /** Print the map in order. */
+    public void printInOrder() {
+        printInOrder(root);
+    }
+
+    /** Helper method of printInOrder(). */
+    private void printInOrder(BSTNode root) {
+        if (root.left != null) {
+            printInOrder(root.left);
+        }
+        System.out.println(root.key + " -- " + root.val);
+        if (root.right != null) {
+            printInOrder(root.right);
+        }
     }
 
 }
