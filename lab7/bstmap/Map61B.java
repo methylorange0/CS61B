@@ -26,7 +26,7 @@ public interface Map61B<K, V> extends Iterable<K> {
     void put(K key, V value);
 
     /* Returns a Set view of the keys contained in this map. Not required for Lab 7.
-     * If you don't implement this, throw an UnsupportedOperationException. */
+     * If you don't impleapment this, throw an UnsupportedOperationException. */
     Set<K> keySet();
 
     /* Removes the mapping for the specified key from this map if present.
