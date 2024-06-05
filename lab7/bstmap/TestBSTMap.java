@@ -1,7 +1,11 @@
 package bstmap;
 
 import static org.junit.Assert.*;
+
+import jh61b.junit.In;
 import org.junit.Test;
+
+import java.util.Iterator;
 
 /** Tests by Brendan Hu, Spring 2015, revised for 2016 by Josh Hug */
 public class TestBSTMap {
@@ -95,6 +99,23 @@ public class TestBSTMap {
         b.put(0, "Hello");
         b.put(1, "World");
         b.printInOrder();
+    }
+
+    /** Test iterator. */
+    @Test
+    public void iteratorTest() {
+        BSTMap<Integer, String> b = new BSTMap<Integer, String>();
+        b.put(2, "!");
+        b.put(0, "Hello");
+        b.put(1, "World");
+        Iterator<Integer> test = b.iterator();
+        assertTrue(test.hasNext());
+        assertEquals(0, (int) test.next());
+        assertTrue(test.hasNext());
+        assertEquals(1, (int) test.next());
+        assertTrue(test.hasNext());
+        assertEquals(2, (int) test.next());
+        assertFalse(test.hasNext());
     }
 
 }

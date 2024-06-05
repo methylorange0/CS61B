@@ -2,11 +2,9 @@ package bstmap;
 
 import edu.princeton.cs.algs4.BST;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
-public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
+public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>, Iterable<K> {
 
     /** Every K-V pair store in one BSTNode. */
     private class BSTNode<K, V> {
@@ -106,7 +104,12 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     /** Returns a Set view of the keys contained in this map. Not required for Lab 7.
      * If you don't impleapment this, throw an UnsupportedOperationException. */
     public Set<K> keySet() {
-        throw new UnsupportedOperationException("Sorry, I haven't finish keySet() method");
+        Set<K> result = new HashSet<>();
+        Iterator<K> iterator = new BSTMapIterator<>();
+        while (iterator.hasNext()) {
+            result.add(iterator.next());
+        }
+        return result;
     }
 
     @Override
@@ -125,9 +128,47 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         throw new UnsupportedOperationException("Sorry, I haven't finish remove(K key, V value) method");
     }
 
+    /** Returns an iterator of BSTMap. */
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException("Sorry, I haven't finish iterator() method");
+        return new BSTMapIterator<K>();
+    }
+
+    /** The iterator of BSTMap. */
+    private class BSTMapIterator<K> implements Iterator<K> {
+        int pos;
+        List<K> list;
+
+        public BSTMapIterator() {
+            pos = 0;
+            list = new ArrayList<K>();
+            helper(root, list);
+        }
+
+        /** Record the keys of map in order. */
+        private void helper(BSTNode root, List<K> list) {
+            if (root.left != null) {
+                helper(root.left, list);
+            }
+            list.add((K) root.key);
+            if (root.right != null) {
+                helper(root.right, list);
+            }
+        }
+
+        /** Returns true if has next.*/
+        @Override
+        public boolean hasNext() {
+            return pos < size;
+        }
+
+        /** Returns the next key.*/
+        @Override
+        public K next() {
+            K result = list.get(pos);
+            pos += 1;
+            return result;
+        }
     }
 
     /** Print the map in order. */
@@ -145,5 +186,5 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
             printInOrder(root.right);
         }
     }
-
+    
 }
