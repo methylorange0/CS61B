@@ -1,6 +1,6 @@
 package hashmap;
 
-import java.util.Collection;
+import java.util.*;
 
 /**
  *  A hash table-backed Map implementation. Provides amortized constant time
@@ -10,6 +10,7 @@ import java.util.Collection;
  *  @author YOUR NAME HERE
  */
 public class MyHashMap<K, V> implements Map61B<K, V> {
+
 
     /**
      * Protected helper class to store key/value pairs
@@ -28,11 +29,24 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     /* Instance Variables */
     private Collection<Node>[] buckets;
     // You should probably define some more!
+    private int size;
+    private int bucketsNum;
+    private double loadFactor;
 
     /** Constructors */
-    public MyHashMap() { }
+    public MyHashMap() {
+        size = 0;
+        bucketsNum = 16;
+        loadFactor = 0.75;
+        buckets = createTable(bucketsNum);
+    }
 
-    public MyHashMap(int initialSize) { }
+    public MyHashMap(int initialSize) {
+        size = 0;
+        bucketsNum = initialSize;
+        loadFactor = 0.75;
+        buckets = createTable(bucketsNum);
+    }
 
     /**
      * MyHashMap constructor that creates a backing array of initialSize.
@@ -41,13 +55,18 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * @param initialSize initial size of backing array
      * @param maxLoad maximum load factor
      */
-    public MyHashMap(int initialSize, double maxLoad) { }
+    public MyHashMap(int initialSize, double maxLoad) {
+        size = 0;
+        bucketsNum = initialSize;
+        loadFactor = maxLoad;
+        buckets = createTable(bucketsNum);
+    }
 
     /**
      * Returns a new node to be placed in a hash table bucket
      */
     private Node createNode(K key, V value) {
-        return null;
+        return new Node(key, value);
     }
 
     /**
@@ -69,7 +88,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * OWN BUCKET DATA STRUCTURES WITH THE NEW OPERATOR!
      */
     protected Collection<Node> createBucket() {
-        return null;
+        return new ArrayList<>();
     }
 
     /**
@@ -82,10 +101,135 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * @param tableSize the size of the table to create
      */
     private Collection<Node>[] createTable(int tableSize) {
+        Collection<Node>[] table = new Collection[tableSize];
+        for(int i = 0; i < tableSize; i++) {
+            table[i] = createBucket();
+        }
+        return table;
+    }
+
+    /** Removes all of the mappings from this map. */
+    public void clear() {
+        size = 0;
+        for (int i = 0; i < bucketsNum; i++) {
+            buckets[i] = null;
+        }
+    }
+
+    /** Returns true if this map contains a mapping for the specified key. */
+    public boolean containsKey(K key) {
+        int index = Math.floorMod(key.hashCode(), bucketsNum);
+        Collection<Node> theCollection = buckets[index];
+        if (theCollection == null) {
+            return false;
+        }
+        Iterator<Node> seer = theCollection.iterator();
+        while(seer.hasNext()) {
+            if (seer.next().key.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped, or null if this
+     * map contains no mapping for the key.
+     */
+    public V get(K key) {
+        int index = Math.floorMod(key.hashCode(), bucketsNum);
+        Collection<Node> theCollection = buckets[index];
+        if (theCollection == null) {
+            return null;
+        }
+        Iterator<Node> seer = theCollection.iterator();
+        while(seer.hasNext()) {
+            Node which = seer.next();
+            if (which.key.equals(key)) {
+                return which.value;
+            }
+        }
         return null;
     }
 
-    // TODO: Implement the methods of the Map61B Interface below
-    // Your code won't compile until you do so!
+    /** Returns the number of key-value mappings in this map. */
+    public int size() {
+        return size;
+    }
 
+    /**
+     * Associates the specified value with the specified key in this map.
+     * If the map previously contained a mapping for the key,
+     * the old value is replaced.
+     */
+    public void put(K key, V value) {
+        int index = Math.floorMod(key.hashCode(), bucketsNum);
+        Node thisOne = createNode(key, value);
+        Collection<Node> theCollection = buckets[index];
+        Iterator<Node> seer = theCollection.iterator();
+        while(seer.hasNext()) {
+            Node which = seer.next();
+            if (which.key.equals(key)) {
+                which.value = value;
+                return;
+            }
+        }
+        theCollection.add(thisOne);
+        size += 1;
+        if ((double)size / (double) bucketsNum >= loadFactor) {
+            resize();
+        }
+    }
+
+    /** Resize the table. */
+    private void resize() {
+        Collection<Node>[] newBuckets = createTable(bucketsNum * 2);
+        for (int i = 0; i < bucketsNum; i++) {
+            Collection<Node> theCollection = buckets[i];
+            Iterator<Node> seer = theCollection.iterator();
+            while(seer.hasNext()) {
+                Node theNode = seer.next();
+                int index = Math.floorMod(theNode.key.hashCode(), bucketsNum * 2);
+                newBuckets[index].add(theNode);
+            }
+        }
+        bucketsNum *= 2;
+        buckets = newBuckets;
+    }
+
+    /** Returns a Set view of the keys contained in this map. */
+    public Set<K> keySet() {
+        Set<K> result = new HashSet<>();
+        for (int i = 0; i < bucketsNum; i++) {
+            Collection<Node> theCollection = buckets[i];
+            Iterator<Node> seer = theCollection.iterator();
+            while(seer.hasNext()) {
+                result.add(seer.next().key);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Removes the mapping for the specified key from this map if present.
+     * Not required for Lab 8. If you don't implement this, throw an
+     * UnsupportedOperationException.
+     */
+    public V remove(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Removes the entry for the specified key only if it is currently mapped to
+     * the specified value. Not required for Lab 8. If you don't implement this,
+     * throw an UnsupportedOperationException.
+     */
+    public V remove(K key, V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        return null;
+    }
 }
