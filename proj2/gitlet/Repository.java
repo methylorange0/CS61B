@@ -78,12 +78,12 @@ public class Repository {
 
         // Save this init commit object.
         Commit initCommit = new Commit();
-        initCommit.saveCommit();
+        initCommit.save();
 
         // Change the pointer and HEAD.
         File master = join(HEADS_DIR, "master");
         master.createNewFile();
-        writeContents(master, initCommit.commitHash());
+        writeContents(master, initCommit.hash());
         writeContents(HEAD,"master");
     }
 
@@ -149,7 +149,8 @@ public class Repository {
 
         // if the current working file == the current commit file, delete areaFile if it exists,
         if (currentCommit.blobs.containsKey(name) && currentCommit.blobs.get(name).equals(fileHash)) {
-            restrictedDelete(areaFile);
+            //restrictedDelete(areaFile);
+            areaFile.delete();
             return;
         }
 
@@ -172,9 +173,10 @@ public class Repository {
         // add or update tracking file
         for (int i = 0; i < addNames.size(); i++) {
             String name = addNames.get(i);
-            storeObject(join(AREA_DIR, name));
+            File areaFile = join(AREA_DIR, name);
+            storeObject(readObject(areaFile, File.class));
             theCommit.addBlobRecord(name);
-            restrictedDelete(join(AREA_DIR, name));
+            areaFile.delete();
         }
         // delete tracking
         for (int i = 0; i < deleteList.size(); i++) {

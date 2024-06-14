@@ -46,16 +46,21 @@ public class Commit implements Serializable {
         time = new Date();
         parent = sha1(serialize(prev));
         parent2 = null;
-        blobs.putAll(prev.blobs);
+        if (!prev.blobs.isEmpty()) {
+            blobs.putAll(prev.blobs);
+        } else {
+            blobs = new HashMap<>();
+        }
+
     }
 
     /** Save this commit. */
-    public void saveCommit() throws IOException {
+    public void save() throws IOException {
         Repository.storeObject(this);
     }
 
     /** Return the Hash of this commit. */
-    public String commitHash() {
+    public String hash() {
         return sha1(serialize(this));
     }
 
