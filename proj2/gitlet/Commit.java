@@ -75,8 +75,7 @@ public class Commit implements Serializable {
     }
 
     /** Add a record to the commit blobs from the staging area. */
-    public void addBlobRecord(String name) {
-        String hash = sha1(serialize(join(Repository.AREA_DIR, name)));
+    public void addBlobRecord(String name, String hash) {
         if (blobs.containsKey(name)) {
             blobs.replace(name, hash);
         } else {

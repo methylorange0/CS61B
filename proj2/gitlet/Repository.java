@@ -166,8 +166,9 @@ public class Repository {
         for (int i = 0; i < addNames.size(); i++) {
             String name = addNames.get(i);
             File areaFile = join(AREA_DIR, name);
+            File theFile = join(CWD,name);
             storeObject(readObject(areaFile, File.class));
-            theCommit.addBlobRecord(name);
+            theCommit.addBlobRecord(name, sha1(serialize(theFile)));
             areaFile.delete();
         }
 
@@ -203,9 +204,7 @@ public class Repository {
             writeObject(TABLE, deleteList);
             // if this file is still in the working dir, remove it.
             File theFile = join(CWD, name);
-            if (theFile.exists()) {
-                theFile.delete();
-            }
+            restrictedDelete(theFile);
         }
         if (!changed) {
             System.out.println("No reason to remove the file.");
