@@ -22,8 +22,12 @@ public class Main {
                 Repository.initRepo();
                 break;
             case "add":
-
+                validateNumArgs(args, 2);
+                Repository.addFile(args[1]);
                 break;
+            case "commit":
+                validateNumArgs(args,2);
+                Repository.makeCommit(args[1]);
             default:
                 System.out.println("No command with that name exists");
                 System.exit(0);

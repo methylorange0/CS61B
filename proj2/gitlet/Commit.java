@@ -30,7 +30,7 @@ public class Commit implements Serializable {
     /** The merge Commit has two parents. */
     private String parent2;
     /** The blobs of this Commit. */
-    private HashMap<String, String> blobs;
+    public HashMap<String, String> blobs;
 
     /** Initial commit. */
     public Commit() {
@@ -46,27 +46,33 @@ public class Commit implements Serializable {
         time = new Date();
         parent = sha1(serialize(prev));
         parent2 = null;
-        blobs = (HashMap<String, String>) prev.blobs.clone();
+        blobs.putAll(prev.blobs);
     }
 
     /** Save this commit. */
-    public void saveCommit() {
-        String hashcode = commitHash();
-        File subDir = join(Repository.OBJECT_DIR, hashcode.substring(0, 2));
-        File commitFile = join(subDir, hashcode.substring(2));
-        if (!subDir.exists()) {
-            subDir.mkdir();
-        }
-        try {
-            commitFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e); // @source IntelliJ's help
-        }
-        writeObject(commitFile, this);
+    public void saveCommit() throws IOException {
+        Repository.storeObject(this);
     }
 
     /** Return the Hash of this commit. */
     public String commitHash() {
         return sha1(serialize(this));
+    }
+
+    /** Add a record to the commit blobs from the staging area. */
+    public void addBlobRecord(String name) {
+        String hash = sha1(serialize(join(Repository.AREA_DIR, name)));
+        if (blobs.containsKey(name)) {
+            blobs.put(name, hash);
+        } else {
+            blobs.replace(name, hash);
+        }
+    }
+    /** Delete a record of the commit's blobs. */
+    public void deleteBlobRecord(String name) {
+        if (blobs.containsKey(name)) {
+            String hash = blobs.get(name);
+            blobs.remove(name, hash);
+        }
     }
 }
