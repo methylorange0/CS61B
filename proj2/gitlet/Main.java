@@ -29,6 +29,10 @@ public class Main {
                 validateNumArgs(args,2);
                 Repository.makeCommit(args[1]);
                 break;
+            case "rm":
+                validateNumArgs(args, 2);
+                Repository.removeFile(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists");
                 System.exit(0);

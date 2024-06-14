@@ -3,15 +3,10 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import static gitlet.Utils.*;
-
-
 
 /** Represents a gitlet repository.
  *  In this repository, commits and blobs are both in the object folder,
@@ -100,6 +95,7 @@ public class Repository {
         File result = join(subdir, hash.substring(2));
         return result;
     }
+
     /** use this method to store an object. */
     public static void storeObject(Serializable storeObj) throws IOException {
         String hash = sha1(serialize(storeObj));
@@ -120,7 +116,7 @@ public class Repository {
     }
 
     /** Return the delete list (aka Table). */
-    public static ArrayList<String> deleteList() {
+    public static ArrayList<String> readTable() {
         return readObject(TABLE, ArrayList.class);
     }
 
@@ -148,8 +144,7 @@ public class Repository {
         Commit currentCommit = currentCommit();
 
         // if the current working file == the current commit file, delete areaFile if it exists,
-        if (currentCommit.blobs.containsKey(name) && currentCommit.blobs.get(name).equals(fileHash)) {
-            //restrictedDelete(areaFile);
+        if (currentCommit.containsFile(name) && currentCommit.fileHash(name).equals(fileHash)) {
             areaFile.delete();
             return;
         }
@@ -158,7 +153,6 @@ public class Repository {
         if (!areaFile.exists()) {
             areaFile.createNewFile();
         }
-        //Files.copy(theFile.toPath(), areaFile.toPath());
         writeObject(areaFile, theFile);
     }
 
@@ -167,10 +161,8 @@ public class Repository {
         Commit prevCommit = currentCommit();
         Commit theCommit = new Commit(msg, prevCommit);
 
-        List<String> addNames = plainFilenamesIn(AREA_DIR);
-        List<String> deleteList = deleteList();
-
         // add or update tracking file
+        List<String> addNames = plainFilenamesIn(AREA_DIR);
         for (int i = 0; i < addNames.size(); i++) {
             String name = addNames.get(i);
             File areaFile = join(AREA_DIR, name);
@@ -178,12 +170,47 @@ public class Repository {
             theCommit.addBlobRecord(name);
             areaFile.delete();
         }
+
         // delete tracking
+        List<String> deleteList = readTable();
         for (int i = 0; i < deleteList.size(); i++) {
             String name = deleteList.get(i);
             theCommit.deleteBlobRecord(name);
         }
         clearTable();
+
+        // save commit and update pointer
+        theCommit.save();
+        String head = readContentsAsString(HEAD);
+        File pointer = join(HEADS_DIR, head);
+        writeContents(pointer, theCommit.hash());
+    }
+
+    public static void removeFile(String name) {
+        Boolean changed = false;
+        File areaFile = join(AREA_DIR, name);
+        // If this file is in the staging area, remove the staging file.
+        if(areaFile.exists()) {
+            areaFile.delete();
+            changed = true;
+        }
+        // If this file is tracked, add it to the TABLE,
+        Commit theCommit = currentCommit();
+        if (theCommit.containsFile(name)) {
+            changed = true;
+            ArrayList<String> deleteList = readTable();
+            deleteList.add(name);
+            writeObject(TABLE, deleteList);
+            // if this file is still in the working dir, remove it.
+            File theFile = join(CWD, name);
+            if (theFile.exists()) {
+                theFile.delete();
+            }
+        }
+        if (!changed) {
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
+        }
     }
 
 }

@@ -32,6 +32,16 @@ public class Commit implements Serializable {
     /** The blobs of this Commit. */
     public HashMap<String, String> blobs;
 
+    /** Just for test. */
+    public void printout() {
+        System.out.println(message);
+        System.out.println(time);
+        System.out.println(parent);
+        for (String name : blobs.keySet()) {
+            System.out.println("key: " + name + " value: " + blobs.get(name));
+        }
+    }
+
     /** Initial commit. */
     public Commit() {
         message = "initial commit";
@@ -68,9 +78,9 @@ public class Commit implements Serializable {
     public void addBlobRecord(String name) {
         String hash = sha1(serialize(join(Repository.AREA_DIR, name)));
         if (blobs.containsKey(name)) {
-            blobs.put(name, hash);
-        } else {
             blobs.replace(name, hash);
+        } else {
+            blobs.put(name, hash);
         }
     }
     /** Delete a record of the commit's blobs. */
@@ -80,4 +90,13 @@ public class Commit implements Serializable {
             blobs.remove(name, hash);
         }
     }
+    /** Return true if commit contain this file. */
+    public Boolean containsFile(String name) {
+        return blobs.containsKey(name);
+    }
+    /** Return hash of file in the commit. */
+    public String fileHash(String name) {
+        return blobs.get(name);
+    }
+
 }
