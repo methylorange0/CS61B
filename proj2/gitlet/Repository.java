@@ -52,6 +52,10 @@ public class Repository {
     public static final File HEAD = join(GITLET_DIR, "HEAD");
 
 
+    /** ---------------------------------------------------------------------------------------------------
+     * main part
+     */
+
     /** Init the repository. */
     public static void initRepo() throws IOException { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
@@ -82,54 +86,6 @@ public class Repository {
         writeContents(HEAD,"master");
     }
 
-    /** -----------------------------------------------------------------------------------------
-     * helper method
-     */
-
-    /** The object directory has special structure,
-     *
-     * use this method to find the file.
-     */
-    public static File findObject(String hash) {
-        File subdir = join(OBJECT_DIR, hash.substring(0,2));
-        File result = join(subdir, hash.substring(2));
-        return result;
-    }
-
-    /** use this method to store an object. */
-    public static void storeObject(Serializable storeObj) throws IOException {
-        String hash = sha1(serialize(storeObj));
-        File subDir = join(Repository.OBJECT_DIR, hash.substring(0, 2));
-        File commitFile = join(subDir, hash.substring(2));
-        if (!subDir.exists()) {
-            subDir.mkdir();
-        }
-        commitFile.createNewFile();
-        writeObject(commitFile, storeObj);
-    }
-
-    /** Return the current commit object. */
-    public static Commit currentCommit() {
-        String head = readContentsAsString(HEAD);
-        String commitHash = readContentsAsString(join(HEADS_DIR, head));
-        return readObject(findObject(commitHash), Commit.class);
-    }
-
-    /** Return the delete list (aka Table). */
-    public static ArrayList<String> readTable() {
-        return readObject(TABLE, ArrayList.class);
-    }
-
-    /** Clear the delete list (aka Table). */
-    private static void clearTable() {
-        ArrayList<String> emptyTable = new ArrayList<>();
-        writeObject(TABLE, emptyTable);
-    }
-
-    /** -----------------------------------------------------------------------------------------
-     * main part
-     */
-
     /** Add file to the staging area. */
     public static void addFile(String name) throws IOException {
         File theFile = join(CWD,name);
@@ -153,7 +109,7 @@ public class Repository {
         if (!areaFile.exists()) {
             areaFile.createNewFile();
         }
-        writeObject(areaFile, theFile);
+        writeContents(areaFile, readContents(theFile));
     }
 
     /** Make a commit. */
@@ -166,14 +122,14 @@ public class Repository {
         for (int i = 0; i < addNames.size(); i++) {
             String name = addNames.get(i);
             File areaFile = join(AREA_DIR, name);
-            File theFile = join(CWD,name);
-            storeObject(readObject(areaFile, File.class));
-            theCommit.addBlobRecord(name, sha1(readContents(theFile)));
+            String hash = sha1(readContents(areaFile));
+            storeObject(areaFile, hash);
+            theCommit.addBlobRecord(name, hash);
             areaFile.delete();
         }
 
         // delete tracking
-        List<String> deleteList = readTable();
+        ArrayList<String> deleteList = readTable();
         for (int i = 0; i < deleteList.size(); i++) {
             String name = deleteList.get(i);
             theCommit.deleteBlobRecord(name);
@@ -210,6 +166,52 @@ public class Repository {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
+    }
+
+
+
+
+    /** ---------------------------------------------------------------------------------------------
+     * helper method
+     */
+
+    /** The object directory has special structure,
+     *
+     * use this method to find the file.
+     */
+    public static File findObject(String hash) {
+        File subdir = join(OBJECT_DIR, hash.substring(0,2));
+        File result = join(subdir, hash.substring(2));
+        return result;
+    }
+
+    /** use this method to store an object. */
+    public static void storeObject(Serializable storeObj, String hash) throws IOException {
+        File subDir = join(Repository.OBJECT_DIR, hash.substring(0, 2));
+        File commitFile = join(subDir, hash.substring(2));
+        if (!subDir.exists()) {
+            subDir.mkdir();
+        }
+        commitFile.createNewFile();
+        writeObject(commitFile, storeObj);
+    }
+
+    /** Return the current commit object. */
+    public static Commit currentCommit() {
+        String head = readContentsAsString(HEAD);
+        String commitHash = readContentsAsString(join(HEADS_DIR, head));
+        return readObject(findObject(commitHash), Commit.class);
+    }
+
+    /** Return the delete list (aka Table). */
+    public static ArrayList<String> readTable() {
+        return readObject(TABLE, ArrayList.class);
+    }
+
+    /** Clear the delete list (aka Table). */
+    private static void clearTable() {
+        ArrayList<String> emptyTable = new ArrayList<>();
+        writeObject(TABLE, emptyTable);
     }
 
 }
