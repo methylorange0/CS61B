@@ -201,6 +201,24 @@ public class Repository {
         }
     }
 
+    /** Print out the ids of all commits that have the given commit message. */
+    public static void printIdWithGivenMessage(String givenMsg) {
+        List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
+        Boolean have = false;
+        for (int i = 0; i < commitNames.size(); i++) {
+            String name = commitNames.get(i);
+            File thisFile = join(COMMITS_DIR, name);
+            Commit thisCommit = readObject(thisFile, Commit.class);
+            if (thisCommit.getMessage().equals(givenMsg)) {
+                have = true;
+                System.out.println(thisCommit.hash());
+            }
+        }
+        if (!have) {
+            System.out.println("Found no commit with that message.");
+        }
+    }
+
 
 
 

@@ -3,9 +3,12 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.TimeZone;
+
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
@@ -36,14 +39,14 @@ public class Commit implements Serializable {
     /** Print out this commit. */
     public void printout() {
         System.out.println("===");
-        System.out.println();
         System.out.println("commit " + hash());
         if (parent2 != null) {
             System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
         }
-        Formatter dateFormat = new Formatter();
-        String formatDate = dateFormat.format("%tc", time).toString();
-        System.out.println("Date: " + formatDate);
+        TimeZone timeZone = TimeZone.getTimeZone("GMT+08:00");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyy Z"); //@source https://tongyi.aliyun.com/qianwen/
+        sdf.setTimeZone(timeZone);
+        System.out.println("Date: " + sdf.format(time));
         System.out.println(message);
         System.out.println();
 
@@ -77,6 +80,11 @@ public class Commit implements Serializable {
     /** Return the Hash of this commit. */
     public String hash() {
         return sha1(serialize(this));
+    }
+
+    /** Return the message of this commit. */
+    public String getMessage() {
+        return message;
     }
 
     /** Add a record to the commit blobs from the staging area. */
