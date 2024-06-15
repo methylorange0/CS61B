@@ -23,7 +23,7 @@ public class Repository {
      * variable is used. We've provided two examples for you.
      */
 
-    /** The current working directory.
+    /** The structure of the directory.
      * .gitlet
      *    |- object
      *    |     |- ...
@@ -143,6 +143,7 @@ public class Repository {
         writeContents(pointer, theCommit.hash());
     }
 
+    /** Delete tracking a file in the next commit. */
     public static void removeFile(String name) {
         Boolean changed = false;
         File areaFile = join(AREA_DIR, name);
@@ -156,7 +157,10 @@ public class Repository {
         if (theCommit.containsFile(name)) {
             changed = true;
             ArrayList<String> deleteList = readTable();
-            deleteList.add(name);
+            // It's a set.
+            if (!deleteList.contains(name)) {
+                deleteList.add(name);
+            }
             writeObject(TABLE, deleteList);
             // if this file is still in the working dir, remove it.
             File theFile = join(CWD, name);
@@ -165,6 +169,15 @@ public class Repository {
         if (!changed) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
+        }
+    }
+
+    /** Print out the commit log. */
+    public static void printLog() {
+        Commit cursor = currentCommit();
+        while (cursor != null) {
+            cursor.printout();
+            cursor = cursor.prev();
         }
     }
 

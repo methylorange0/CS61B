@@ -33,6 +33,10 @@ public class Main {
                 validateNumArgs(args, 2);
                 Repository.removeFile(args[1]);
                 break;
+            case "log":
+                validateNumArgs(args, 1);
+                Repository.printLog();
+                break;
             default:
                 System.out.println("No command with that name exists");
                 System.exit(0);

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import static gitlet.Utils.*;
 
@@ -32,14 +33,20 @@ public class Commit implements Serializable {
     /** The blobs of this Commit. */
     public HashMap<String, String> blobs;
 
-    /** Just for test. */
+    /** Print out this commit. */
     public void printout() {
-        System.out.println(message);
-        System.out.println(time);
-        System.out.println(parent);
-        for (String name : blobs.keySet()) {
-            System.out.println("key: " + name + " value: " + blobs.get(name));
+        System.out.println("===");
+        System.out.println();
+        System.out.println("commit " + hash());
+        if (parent2 != null) {
+            System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
         }
+        Formatter dateFormat = new Formatter();
+        String formatDate = dateFormat.format("%tc", time).toString();
+        System.out.println("Date: " + formatDate);
+        System.out.println(message);
+        System.out.println();
+
     }
 
     /** Initial commit. */
@@ -94,6 +101,14 @@ public class Commit implements Serializable {
     /** Return hash of file in the commit. */
     public String fileHash(String name) {
         return blobs.get(name);
+    }
+
+    /** Return parent commit. */
+    public Commit prev() {
+        if (parent != null) {
+            return readObject(Repository.findObject(parent), Commit.class);
+        }
+        return null;
     }
 
 }
