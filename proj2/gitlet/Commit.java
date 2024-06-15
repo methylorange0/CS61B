@@ -87,6 +87,44 @@ public class Commit implements Serializable {
             blobs.remove(name, hash);
         }
     }
+
+    /** Restore a file of the given version. */
+    public void restoreFile(File workDir, String fileName) throws IOException {
+        if (!workDir.isDirectory()) {
+            System.out.println("It's not a working directory!");
+            System.exit(0);
+        }
+        for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
+            if (name.equals(fileName)) {
+                File workFile = join(workDir, name);
+                if (!workFile.exists()) {
+                    workFile.createNewFile();
+                }
+                String hash = blobs.get(name);
+                writeContents(workFile, readContents(Repository.findBlobs(hash)));
+                return;
+            }
+        }
+        System.out.println("File does not exist in that commit.");
+    }
+
+    /** Restore the whole version */
+    public void restoreVersion(File workDir) throws IOException {
+        if (!workDir.isDirectory()) {
+            System.out.println("It's not a working directory!");
+            System.exit(0);
+        }
+        for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
+            File workFile = join(workDir, name);
+            if (!workFile.exists()) {
+                workFile.createNewFile();
+            }
+            String hash = blobs.get(name);
+            writeContents(workFile, readObject(Repository.findBlobs(hash), File.class));
+        }
+    }
+
+
     /** Return true if commit contain this file. */
     public Boolean containsFile(String name) {
         return blobs.containsKey(name);

@@ -49,6 +49,18 @@ public class Main {
                 validateNumArgs(args, 1);
                 Repository.printRepoStatus();
                 break;
+            case "checkout":
+                if (args.length > 1) {
+                    String secondArg = args[1];
+                    if (secondArg.equals("--")) {
+                        validateNumArgs(args, 3);
+                        Repository.restoreFileInHead(args[2]);
+                        break;
+                    } else if (args.length == 4 && args[2].equals("--")) {
+
+                        break;
+                    }
+                }
             default:
                 System.out.println("No command with that name exists");
                 System.exit(0);

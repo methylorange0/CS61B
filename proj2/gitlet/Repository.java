@@ -257,6 +257,17 @@ public class Repository {
         System.out.println();
     }
 
+    /** Restore a file of HEAD version. */
+    public static void restoreFileInHead(String fileName) throws IOException {
+        Commit headCommit = currentCommit();
+        headCommit.restoreFile(CWD, fileName);
+    }
+
+    /** Restore a file of GIVEN version. */
+    public static void restoreFileGivenVersion(String hash, String fileName) {
+
+    }
+
 
 
 
@@ -285,7 +296,7 @@ public class Repository {
         } else if(storeObj.getClass() == File.class) {
             File commitFile = join(Repository.BLOBS_DIR, hash);
             commitFile.createNewFile();
-            writeObject(commitFile, storeObj);
+            writeContents(commitFile, readContents((File) storeObj));
         } else {
             System.out.println("This object can't store in the object directory!");
             System.exit(0);
