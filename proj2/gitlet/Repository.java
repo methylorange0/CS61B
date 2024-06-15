@@ -139,7 +139,7 @@ public class Repository {
             System.exit(0);
         }
 
-        String fileHash = sha1(serialize(theFile));
+        String fileHash = sha1(readContents(theFile));
         File areaFile = join(AREA_DIR, name);
         Commit currentCommit = currentCommit();
 
@@ -168,7 +168,7 @@ public class Repository {
             File areaFile = join(AREA_DIR, name);
             File theFile = join(CWD,name);
             storeObject(readObject(areaFile, File.class));
-            theCommit.addBlobRecord(name, sha1(serialize(theFile)));
+            theCommit.addBlobRecord(name, sha1(readContents(theFile)));
             areaFile.delete();
         }
 
