@@ -26,7 +26,10 @@ public class Repository {
     /** The structure of the directory.
      * .gitlet
      *    |- object
-     *    |     |- ...
+     *    |     |- commits
+     *    |     |     |- ...
+     *    |     |- blobs
+     *    |           |- ...
      *    |- refs
      *    |    |- heads
      *    |         |- branches ... (One of them is called master.)
@@ -40,6 +43,10 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     /** The object directory: contains all the commits and bolbs. */
     public static final File OBJECT_DIR = join(GITLET_DIR, "object");
+    /** Contains commits. */
+    public static final File COMMITS_DIR = join(OBJECT_DIR, "commits");
+    /** Contains blobs. */
+    public static final File BLOBS_DIR = join(OBJECT_DIR, "blobs");
     /** The refs directory: contains all the pointers. */
     public static final File REFS_DIR = join(GITLET_DIR, "refs");
     /** The heads directory: sub dir of refs, and it stores all the heads of each branch. */
@@ -66,6 +73,8 @@ public class Repository {
         // Create all the dirs and files.
         GITLET_DIR.mkdir();
         OBJECT_DIR.mkdir();
+        COMMITS_DIR.mkdir();
+        BLOBS_DIR.mkdir();
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
         AREA_DIR.mkdir();
@@ -181,6 +190,17 @@ public class Repository {
         }
     }
 
+    /** Print out all the commits in the uncertain way. */
+    public static void globalPrint() {
+        List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
+        for (int i = 0; i < commitNames.size(); i++) {
+            String name = commitNames.get(i);
+            File thisFile = join(COMMITS_DIR, name);
+            Commit thisCommit = readObject(thisFile, Commit.class);
+            thisCommit.printout();
+        }
+    }
+
 
 
 
@@ -192,28 +212,35 @@ public class Repository {
      *
      * use this method to find the file.
      */
-    public static File findObject(String hash) {
-        File subdir = join(OBJECT_DIR, hash.substring(0,2));
-        File result = join(subdir, hash.substring(2));
-        return result;
+    public static File findCommits(String hash) {
+        return join(COMMITS_DIR, hash);
+    }
+
+    public static File findBlobs(String hash) {
+        return join(BLOBS_DIR, hash);
     }
 
     /** use this method to store an object. */
     public static void storeObject(Serializable storeObj, String hash) throws IOException {
-        File subDir = join(Repository.OBJECT_DIR, hash.substring(0, 2));
-        File commitFile = join(subDir, hash.substring(2));
-        if (!subDir.exists()) {
-            subDir.mkdir();
+        if (storeObj.getClass() == Commit.class) {
+            File commitFile = join(Repository.COMMITS_DIR, hash);
+            commitFile.createNewFile();
+            writeObject(commitFile, storeObj);
+        } else if(storeObj.getClass() == File.class) {
+            File commitFile = join(Repository.BLOBS_DIR, hash);
+            commitFile.createNewFile();
+            writeObject(commitFile, storeObj);
+        } else {
+            System.out.println("This object can't store in the object directory!");
+            System.exit(0);
         }
-        commitFile.createNewFile();
-        writeObject(commitFile, storeObj);
     }
 
     /** Return the current commit object. */
     public static Commit currentCommit() {
         String head = readContentsAsString(HEAD);
         String commitHash = readContentsAsString(join(HEADS_DIR, head));
-        return readObject(findObject(commitHash), Commit.class);
+        return readObject(findCommits(commitHash), Commit.class);
     }
 
     /** Return the delete list (aka Table). */

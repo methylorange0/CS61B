@@ -106,7 +106,7 @@ public class Commit implements Serializable {
     /** Return parent commit. */
     public Commit prev() {
         if (parent != null) {
-            return readObject(Repository.findObject(parent), Commit.class);
+            return readObject(Repository.findCommits(parent), Commit.class);
         }
         return null;
     }
