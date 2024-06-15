@@ -219,6 +219,44 @@ public class Repository {
         }
     }
 
+    /** Print out the status of this Repository. */
+    public static void printRepoStatus() {
+        System.out.println("=== Branches ===");
+        List<String> branchNames = plainFilenamesIn(HEADS_DIR);
+        String head = readContentsAsString(HEAD);
+        for (int i = 0; i < branchNames.size(); i++) {
+            String name = branchNames.get(i);
+            if (name.equals(head)) {
+                System.out.println("*" + name);
+            } else {
+                System.out.println(name);
+            }
+        }
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        List<String> stagingName = plainFilenamesIn(AREA_DIR);
+        for (int i = 0; i < stagingName.size(); i++) {
+            String name = stagingName.get(i);
+            System.out.println(name);
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        ArrayList<String> deleteList = readTable();
+        for (int i = 0; i < deleteList.size(); i++) {
+            String name = deleteList.get(i);
+            System.out.println(name);
+        }
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+
+        System.out.println("=== Untracked Files ===");
+        System.out.println();
+    }
+
 
 
 

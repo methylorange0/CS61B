@@ -45,6 +45,10 @@ public class Main {
                 validateNumArgs(args, 2);
                 Repository.printIdWithGivenMessage(args[1]);
                 break;
+            case "status":
+                validateNumArgs(args, 1);
+                Repository.printRepoStatus();
+                break;
             default:
                 System.out.println("No command with that name exists");
                 System.exit(0);

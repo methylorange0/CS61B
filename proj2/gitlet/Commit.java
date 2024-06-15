@@ -36,21 +36,6 @@ public class Commit implements Serializable {
     /** The blobs of this Commit. */
     public HashMap<String, String> blobs;
 
-    /** Print out this commit. */
-    public void printout() {
-        System.out.println("===");
-        System.out.println("commit " + hash());
-        if (parent2 != null) {
-            System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
-        }
-        TimeZone timeZone = TimeZone.getTimeZone("GMT+08:00");
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyy Z"); //@source https://tongyi.aliyun.com/qianwen/
-        sdf.setTimeZone(timeZone);
-        System.out.println("Date: " + sdf.format(time));
-        System.out.println(message);
-        System.out.println();
-
-    }
 
     /** Initial commit. */
     public Commit() {
@@ -117,6 +102,22 @@ public class Commit implements Serializable {
             return readObject(Repository.findCommits(parent), Commit.class);
         }
         return null;
+    }
+
+    /** Print out this commit. */
+    public void printout() {
+        System.out.println("===");
+        System.out.println("commit " + hash());
+        if (parent2 != null) {
+            System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
+        }
+        TimeZone timeZone = TimeZone.getTimeZone("GMT+08:00"); //@source https://tongyi.aliyun.com/qianwen/
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyy Z");
+        sdf.setTimeZone(timeZone);
+        System.out.println("Date: " + sdf.format(time));
+        System.out.println(message);
+        System.out.println();
+
     }
 
 }
