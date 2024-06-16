@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static gitlet.Utils.*;
+import static gitlet.Utils.restrictedDelete;
 
 /** Represents a gitlet repository.
  *  In this repository, commits and blobs are both in the object folder,
@@ -118,7 +119,7 @@ public class Repository {
         Commit currentCommit = currentCommit();
 
         // if the current working file == the current commit file, delete areaFile if it exists,
-        if (currentCommit.containsFile(name) && currentCommit.fileHash(name).equals(fileHash)) {
+        if (currentCommit.isContainFile(name) && currentCommit.fileHash(name).equals(fileHash)) {
             areaFile.delete();
             return;
         }
@@ -176,7 +177,7 @@ public class Repository {
         }
         // If this file is tracked, add it to the TABLE,
         Commit theCommit = currentCommit();
-        if (theCommit.containsFile(name)) {
+        if (theCommit.isContainFile(name)) {
             changed = true;
             ArrayList<String> deleteList = readTable();
             // It's a set.
@@ -279,39 +280,69 @@ public class Repository {
 
     /** Restore a file of GIVEN version. */
     public static void restoreFileGivenVersion(String hash, String fileName) {
-        if (hash.length() == 40) {
-            File commitFile = findCommits(hash);
-            if (!commitFile.exists()) {
-                throw new GitletException("No commit with that id exists.");
-            }
-            Commit givenVersion = readObject(commitFile, Commit.class);
-            givenVersion.restoreFile(CWD, fileName);
-            return;
-        } else {
-            List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
-            for (int i = 0; i < commitNames.size(); i++) {
-                String commitName = commitNames.get(i);
-                if (matchPrefixHash(hash, commitName)) {
-                    Commit givenVersion = readObject(findCommits(commitName), Commit.class);
-                    givenVersion.restoreFile(CWD, fileName);
-                    return;
-                }
-            }
-        }
-        throw new GitletException("No commit with that id exists.");
+        Commit givenCommit = readCommit(hash);
+        givenCommit.restoreFile(CWD, fileName);
     }
 
-    /** Helper method to match a prefix hash. */
-    private static boolean matchPrefixHash(String prefix, String hash) {
-        if (prefix.length() > 40) {
-            return false;
+    /** Restore the GIVEN branch. */
+    public static void restoreGivenBranch(String branchName) {
+
+        // Check if GIVEN version == current commit.
+        if (branchName.equals(readContentsAsString(HEAD))) {
+            throw new GitletException("No need to checkout the current branch.");
         }
-        for (int i = 0; i < prefix.length(); i++) {
-            if (prefix.charAt(i) != hash.charAt(i)) {
-                return false;
-            }
+        // Check if the branch exists.
+        File givenBranch = join(HEADS_DIR, branchName);
+        if (!givenBranch.exists()) {
+            throw new GitletException("No such branch exists.");
         }
-        return true;
+
+        // Copy the files of GIVEN version
+        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)), Commit.class);
+        restoreGivenCommitVersion(givenCommit);
+
+        // Change HEAD pointer.
+        writeContents(HEAD, branchName);
+
+    }
+
+
+
+    /** Create a new branch with given name, point at the HEAD commit. */
+    public static void createNewBranch(String branchName) {
+        File newBranch = join(HEADS_DIR, branchName);
+        if (newBranch.exists()) {
+            throw new GitletException("A branch with that name already exists.");
+        }
+        try {
+            newBranch.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        writeContents(newBranch, readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD))));
+    }
+
+    /** Deletes the branch with given name. */
+    public static void deleteBranch(String branchName) {
+        if (branchName.equals(readContentsAsString(HEAD))) {
+            throw new GitletException("Cannot remove the current branch.");
+        }
+        File deleteBranch = join(HEADS_DIR, branchName);
+        if (!deleteBranch.exists()) {
+            throw new GitletException("A branch with that name does not exists.");
+        }
+        deleteBranch.delete();
+    }
+
+    /** Check out all the files tracked by the given commit. */
+    public static void resetGivenCommit(String hash) {
+        // Find the commit.
+        Commit givenCommit = readCommit(hash);
+        // Copy the files of GIVEN commit
+        givenCommit.restoreVersion(CWD);
+        // Change pointers.
+        File branchHead = join(HEADS_DIR, readContentsAsString(HEAD));
+        writeContents(branchHead, completeHash(hash));
     }
 
 
@@ -329,6 +360,43 @@ public class Repository {
         return join(COMMITS_DIR, hash);
     }
 
+    /** Return a commit object with given hash, support abbreviated hash. */
+    private static Commit readCommit(String hash) {
+        if (hash.length() == 40) {
+            File commitFile = findCommits(hash);
+            if (!commitFile.exists()) {
+                throw new GitletException("No commit with that id exists.");
+            }
+            return readObject(commitFile, Commit.class);
+        } else {
+            List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
+            for (int i = 0; i < commitNames.size(); i++) {
+                String commitName = commitNames.get(i);
+                if (matchPrefixHash(hash, commitName)) {
+                    return readObject(findCommits(commitName), Commit.class);
+                }
+            }
+        }
+        throw new GitletException("No commit with that id exists.");
+    }
+
+    /** Return the complete hash of a hash. */
+    private static String completeHash(String hash) {
+        if (hash.length() == 40) {
+            return hash;
+        } else {
+            List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
+            for (int i = 0; i < commitNames.size(); i++) {
+                String commitName = commitNames.get(i);
+                if (matchPrefixHash(hash, commitName)) {
+                    return commitName;
+                }
+            }
+        }
+        throw new GitletException("No commit with that id exists.");
+    }
+
+    /** Return the file with the given hash. */
     public static File findBlobs(String hash) {
         return join(BLOBS_DIR, hash);
     }
@@ -374,4 +442,48 @@ public class Repository {
         writeObject(TABLE, emptyTable);
     }
 
+    /** Helper method to match a prefix hash. */
+    private static boolean matchPrefixHash(String prefix, String hash) {
+        if (prefix.length() > 40) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length(); i++) {
+            if (prefix.charAt(i) != hash.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Helper method to restore a version of files with given commit. */
+    private static void restoreGivenCommitVersion(Commit givenCommit) {
+
+        // Check if there are any untracked files.
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        for (int i = 0; i < workingFiles.size(); i++) {
+            String fileName = workingFiles.get(i);
+            if (!currentCommit().isContainFile(fileName)) {
+                throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
+
+        // Clear the CWD
+        for (int i = 0; i < workingFiles.size(); i++) {
+            String name = workingFiles.get(i);
+            File deleteFile = join(CWD, name);
+            restrictedDelete(deleteFile);
+        }
+        // Clear the staging area
+        List<String> stagingFiles = plainFilenamesIn(AREA_DIR);
+        for (int i = 0; i < stagingFiles.size(); i++) {
+            String name = stagingFiles.get(i);
+            File deleteFile = join(AREA_DIR, name);
+            deleteFile.delete();
+        }
+        clearTable();
+
+        // Copy the files of GIVEN version
+        givenCommit.restoreVersion(CWD);
+
+    }
 }

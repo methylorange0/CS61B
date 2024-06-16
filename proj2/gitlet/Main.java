@@ -59,9 +59,24 @@ public class Main {
                         Repository.restoreFileGivenVersion(args[1], args[3]);
                         break;
                     } else if (args.length == 2) {
+                        Repository.restoreGivenBranch(args[1]);
                         break;
+                    } else {
+                        throw new GitletException("Incorrect operands.");
                     }
                 }
+            case "branch":
+                validateNumArgs(args, 2);
+                Repository.createNewBranch(args[1]);
+                break;
+            case "rm-branch":
+                validateNumArgs(args, 2);
+                Repository.deleteBranch(args[1]);
+                break;
+            case "reset":
+                validateNumArgs(args, 2);
+                Repository.resetGivenCommit(args[1]);
+                break;
             default:
                 throw new GitletException("No command with that name exists");
         }

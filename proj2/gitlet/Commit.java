@@ -125,13 +125,13 @@ public class Commit implements Serializable {
                 }
             }
             String hash = blobs.get(name);
-            writeContents(workFile, readObject(Repository.findBlobs(hash), File.class));
+            writeContents(workFile, readContents(Repository.findBlobs(hash)));
         }
     }
 
 
-    /** Return true if commit contain this file. */
-    public Boolean containsFile(String name) {
+    /** Return true if commit contains this file. */
+    public Boolean isContainFile(String name) {
         return blobs.containsKey(name);
     }
     /** Return hash of file in the commit. */
