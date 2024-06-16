@@ -12,8 +12,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException { // @source IntelliJ's help
         if (args.length == 0) {
-            System.out.println("Please enter a command.");
-            System.exit(0);
+            throw new GitletException("Please enter a command.");
         }
         String firstArg = args[0];
         switch (firstArg) {
@@ -64,8 +63,7 @@ public class Main {
                     }
                 }
             default:
-                System.out.println("No command with that name exists");
-                System.exit(0);
+                throw new GitletException("No command with that name exists");
         }
     }
 
@@ -74,8 +72,7 @@ public class Main {
      */
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            System.out.println("Incorrect operands.");
-            System.exit(0);
+            throw new GitletException("Incorrect operands.");
         }
     }
 }

@@ -90,8 +90,7 @@ public class Commit implements Serializable {
     /** Restore a file of the given version. */
     public void restoreFile(File workDir, String fileName) throws IOException {
         if (!workDir.isDirectory()) {
-            System.out.println("It's not a working directory!");
-            System.exit(0);
+            throw new GitletException("It's not a working directory!");
         }
         for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
             if (name.equals(fileName)) {
@@ -110,8 +109,7 @@ public class Commit implements Serializable {
     /** Restore the whole version */
     public void restoreVersion(File workDir) throws IOException {
         if (!workDir.isDirectory()) {
-            System.out.println("It's not a working directory!");
-            System.exit(0);
+            throw new GitletException("It's not a working directory!");
         }
         for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
             File workFile = join(workDir, name);

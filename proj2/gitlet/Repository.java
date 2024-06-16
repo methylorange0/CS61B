@@ -65,8 +65,7 @@ public class Repository {
     /** Init the repository. */
     public static void initRepo() throws IOException { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
+            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
         }
 
         // Create all the dirs and files.
@@ -99,8 +98,7 @@ public class Repository {
         File theFile = join(CWD, name);
         // Failure cases
         if (!theFile.exists()) {
-            System.out.println("File does not exist");
-            System.exit(0);
+            throw new GitletException("File does not exist");
         }
 
         String fileHash = sha1(readContents(theFile));
@@ -175,8 +173,7 @@ public class Repository {
             restrictedDelete(theFile);
         }
         if (!changed) {
-            System.out.println("No reason to remove the file.");
-            System.exit(0);
+            throw new GitletException("No reason to remove the file.");
         }
     }
 
@@ -269,8 +266,7 @@ public class Repository {
         if (hash.length() == 40) {
             File commitFile = findCommits(hash);
             if (!commitFile.exists()) {
-                System.out.println("No commit with that id exists.");
-                System.exit(0);
+                throw new GitletException("No commit with that id exists.");
             }
             Commit givenVersion = readObject(commitFile, Commit.class);
             givenVersion.restoreFile(CWD, fileName);
@@ -286,8 +282,7 @@ public class Repository {
                 }
             }
         }
-        System.out.println("No commit with that id exists.");
-        System.exit(0);
+        throw new GitletException("No commit with that id exists.");
     }
 
     /** Helper method to match a prefix hash. */
@@ -349,7 +344,8 @@ public class Repository {
 
     /** Return the delete list (aka Table). */
     public static ArrayList<String> readTable() {
-        return readObject(TABLE, ArrayList.class);
+        ArrayList<String> result = (ArrayList<String>) readObject(TABLE, ArrayList.class);
+        return result;
     }
 
     /** Clear the delete list (aka Table). */
