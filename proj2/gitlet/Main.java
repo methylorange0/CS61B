@@ -16,7 +16,7 @@ public class Main {
             System.exit(0);
         }
         String firstArg = args[0];
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
                 validateNumArgs(args, 1);
                 Repository.initRepo();
@@ -26,7 +26,7 @@ public class Main {
                 Repository.addFile(args[1]);
                 break;
             case "commit":
-                validateNumArgs(args,2);
+                validateNumArgs(args, 2);
                 Repository.makeCommit(args[1]);
                 break;
             case "rm":
@@ -57,7 +57,9 @@ public class Main {
                         Repository.restoreFileInHead(args[2]);
                         break;
                     } else if (args.length == 4 && args[2].equals("--")) {
-
+                        Repository.restoreFileGivenVersion(args[1], args[3]);
+                        break;
+                    } else if (args.length == 2) {
                         break;
                     }
                 }

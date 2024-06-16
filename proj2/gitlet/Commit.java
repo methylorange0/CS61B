@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.TimeZone;
 
@@ -34,7 +33,7 @@ public class Commit implements Serializable {
     /** The merge Commit has two parents. */
     private String parent2;
     /** The blobs of this Commit. */
-    public HashMap<String, String> blobs;
+    private HashMap<String, String> blobs;
 
 
     /** Initial commit. */
@@ -59,7 +58,7 @@ public class Commit implements Serializable {
 
     /** Save this commit. */
     public void save() throws IOException {
-        Repository.storeObject(this, hash());
+        Repository.storeCommit(this, hash());
     }
 
     /** Return the Hash of this commit. */
@@ -134,18 +133,15 @@ public class Commit implements Serializable {
         return blobs.get(name);
     }
 
-    /** Return parent commit. */
-    public Commit prev() {
-        if (parent != null) {
-            return readObject(Repository.findCommits(parent), Commit.class);
-        }
-        return null;
+    /** Return parent commit hash. */
+    public String prev() {
+        return parent;
     }
 
     /** Print out this commit. */
-    public void printout() {
+    public void printout(String hash) {
         System.out.println("===");
-        System.out.println("commit " + hash());
+        System.out.println("commit " + hash);
         if (parent2 != null) {
             System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
         }

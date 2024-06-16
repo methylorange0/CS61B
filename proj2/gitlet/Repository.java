@@ -2,7 +2,6 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,12 +91,12 @@ public class Repository {
         File master = join(HEADS_DIR, "master");
         master.createNewFile();
         writeContents(master, initCommit.hash());
-        writeContents(HEAD,"master");
+        writeContents(HEAD, "master");
     }
 
     /** Add file to the staging area. */
     public static void addFile(String name) throws IOException {
-        File theFile = join(CWD,name);
+        File theFile = join(CWD, name);
         // Failure cases
         if (!theFile.exists()) {
             System.out.println("File does not exist");
@@ -122,7 +121,7 @@ public class Repository {
     }
 
     /** Make a commit. */
-    public static void makeCommit (String msg) throws IOException {
+    public static void makeCommit(String msg) throws IOException {
         Commit prevCommit = currentCommit();
         Commit theCommit = new Commit(msg, prevCommit);
 
@@ -132,7 +131,7 @@ public class Repository {
             String name = addNames.get(i);
             File areaFile = join(AREA_DIR, name);
             String hash = sha1(readContents(areaFile));
-            storeObject(areaFile, hash);
+            storeBlobs(areaFile, hash);
             theCommit.addBlobRecord(name, hash);
             areaFile.delete();
         }
@@ -157,7 +156,7 @@ public class Repository {
         Boolean changed = false;
         File areaFile = join(AREA_DIR, name);
         // If this file is in the staging area, remove the staging file.
-        if(areaFile.exists()) {
+        if (areaFile.exists()) {
             areaFile.delete();
             changed = true;
         }
@@ -183,10 +182,12 @@ public class Repository {
 
     /** Print out the commit log. */
     public static void printLog() {
-        Commit cursor = currentCommit();
-        while (cursor != null) {
-            cursor.printout();
-            cursor = cursor.prev();
+        String head = readContentsAsString(HEAD);
+        String crusorHash = readContentsAsString(join(HEADS_DIR, head));
+        while (crusorHash != null) {
+            Commit crusor = readObject(findCommits(crusorHash), Commit.class);
+            crusor.printout(crusorHash);
+            crusorHash = crusor.prev();
         }
     }
 
@@ -197,7 +198,7 @@ public class Repository {
             String name = commitNames.get(i);
             File thisFile = join(COMMITS_DIR, name);
             Commit thisCommit = readObject(thisFile, Commit.class);
-            thisCommit.printout();
+            thisCommit.printout(name);
         }
     }
 
@@ -264,8 +265,42 @@ public class Repository {
     }
 
     /** Restore a file of GIVEN version. */
-    public static void restoreFileGivenVersion(String hash, String fileName) {
+    public static void restoreFileGivenVersion(String hash, String fileName) throws IOException {
+        if (hash.length() == 40) {
+            File commitFile = findCommits(hash);
+            if (!commitFile.exists()) {
+                System.out.println("No commit with that id exists.");
+                System.exit(0);
+            }
+            Commit givenVersion = readObject(commitFile, Commit.class);
+            givenVersion.restoreFile(CWD, fileName);
+            return;
+        } else {
+            List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
+            for (int i = 0; i < commitNames.size(); i++) {
+                String commitName = commitNames.get(i);
+                if (matchPrefixHash(hash, commitName)) {
+                    Commit givenVersion = readObject(findCommits(commitName), Commit.class);
+                    givenVersion.restoreFile(CWD, fileName);
+                    return;
+                }
+            }
+        }
+        System.out.println("No commit with that id exists.");
+        System.exit(0);
+    }
 
+    /** Helper method to match a prefix hash. */
+    private static boolean matchPrefixHash(String prefix, String hash) {
+        if (prefix.length() > 40) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length(); i++) {
+            if (prefix.charAt(i) != hash.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -287,20 +322,22 @@ public class Repository {
         return join(BLOBS_DIR, hash);
     }
 
-    /** use this method to store an object. */
-    public static void storeObject(Serializable storeObj, String hash) throws IOException {
-        if (storeObj.getClass() == Commit.class) {
-            File commitFile = join(Repository.COMMITS_DIR, hash);
-            commitFile.createNewFile();
-            writeObject(commitFile, storeObj);
-        } else if(storeObj.getClass() == File.class) {
-            File commitFile = join(Repository.BLOBS_DIR, hash);
-            commitFile.createNewFile();
-            writeContents(commitFile, readContents((File) storeObj));
-        } else {
-            System.out.println("This object can't store in the object directory!");
-            System.exit(0);
+    /** use this method to store a commit. */
+    public static void storeCommit(Commit storeCommit, String hash) throws IOException {
+        File storeFile = join(COMMITS_DIR, hash);
+        if (!storeFile.exists()) {
+            storeFile.createNewFile();
         }
+        writeObject(storeFile, storeCommit);
+    }
+
+    /** use this method to store a file. */
+    public static void storeBlobs(File storeBlobs, String hash) throws IOException {
+        File storeFile = join(BLOBS_DIR, hash);
+        if (!storeFile.exists()) {
+            storeFile.exists();
+        }
+        writeContents(storeFile, readContents(storeBlobs));
     }
 
     /** Return the current commit object. */
