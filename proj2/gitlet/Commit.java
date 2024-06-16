@@ -57,7 +57,7 @@ public class Commit implements Serializable {
     }
 
     /** Save this commit. */
-    public void save() throws IOException {
+    public void save() {
         Repository.storeCommit(this, hash());
     }
 
@@ -88,7 +88,7 @@ public class Commit implements Serializable {
     }
 
     /** Restore a file of the given version. */
-    public void restoreFile(File workDir, String fileName) throws IOException {
+    public void restoreFile(File workDir, String fileName) {
         if (!workDir.isDirectory()) {
             throw new GitletException("It's not a working directory!");
         }
@@ -96,7 +96,11 @@ public class Commit implements Serializable {
             if (name.equals(fileName)) {
                 File workFile = join(workDir, name);
                 if (!workFile.exists()) {
-                    workFile.createNewFile();
+                    try {
+                        workFile.createNewFile();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 String hash = blobs.get(name);
                 writeContents(workFile, readContents(Repository.findBlobs(hash)));
@@ -107,14 +111,18 @@ public class Commit implements Serializable {
     }
 
     /** Restore the whole version */
-    public void restoreVersion(File workDir) throws IOException {
+    public void restoreVersion(File workDir) {
         if (!workDir.isDirectory()) {
             throw new GitletException("It's not a working directory!");
         }
         for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
             File workFile = join(workDir, name);
             if (!workFile.exists()) {
-                workFile.createNewFile();
+                try {
+                    workFile.createNewFile();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             String hash = blobs.get(name);
             writeContents(workFile, readObject(Repository.findBlobs(hash), File.class));

@@ -63,7 +63,7 @@ public class Repository {
      */
 
     /** Init the repository. */
-    public static void initRepo() throws IOException { // @source IntelliJ's help
+    public static void initRepo() { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
             throw new GitletException("A Gitlet version-control system already exists in the current directory.");
         }
@@ -76,8 +76,16 @@ public class Repository {
         REFS_DIR.mkdir();
         HEADS_DIR.mkdir();
         AREA_DIR.mkdir();
-        TABLE.createNewFile();
-        HEAD.createNewFile();
+        try {
+            TABLE.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            HEAD.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // Init the table.
         clearTable();
@@ -88,13 +96,17 @@ public class Repository {
 
         // Change the pointer and HEAD.
         File master = join(HEADS_DIR, "master");
-        master.createNewFile();
+        try {
+            master.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         writeContents(master, initCommit.hash());
         writeContents(HEAD, "master");
     }
 
     /** Add file to the staging area. */
-    public static void addFile(String name) throws IOException {
+    public static void addFile(String name) {
         File theFile = join(CWD, name);
         // Failure cases
         if (!theFile.exists()) {
@@ -113,13 +125,17 @@ public class Repository {
 
         // write the areaFile.
         if (!areaFile.exists()) {
-            areaFile.createNewFile();
+            try {
+                areaFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         writeContents(areaFile, readContents(theFile));
     }
 
     /** Make a commit. */
-    public static void makeCommit(String msg) throws IOException {
+    public static void makeCommit(String msg) {
         Commit prevCommit = currentCommit();
         Commit theCommit = new Commit(msg, prevCommit);
 
@@ -256,13 +272,13 @@ public class Repository {
     }
 
     /** Restore a file of HEAD version. */
-    public static void restoreFileInHead(String fileName) throws IOException {
+    public static void restoreFileInHead(String fileName) {
         Commit headCommit = currentCommit();
         headCommit.restoreFile(CWD, fileName);
     }
 
     /** Restore a file of GIVEN version. */
-    public static void restoreFileGivenVersion(String hash, String fileName) throws IOException {
+    public static void restoreFileGivenVersion(String hash, String fileName) {
         if (hash.length() == 40) {
             File commitFile = findCommits(hash);
             if (!commitFile.exists()) {
@@ -318,16 +334,20 @@ public class Repository {
     }
 
     /** use this method to store a commit. */
-    public static void storeCommit(Commit storeCommit, String hash) throws IOException {
+    public static void storeCommit(Commit storeCommit, String hash){
         File storeFile = join(COMMITS_DIR, hash);
         if (!storeFile.exists()) {
-            storeFile.createNewFile();
+            try {
+                storeFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         writeObject(storeFile, storeCommit);
     }
 
     /** use this method to store a file. */
-    public static void storeBlobs(File storeBlobs, String hash) throws IOException {
+    public static void storeBlobs(File storeBlobs, String hash) {
         File storeFile = join(BLOBS_DIR, hash);
         if (!storeFile.exists()) {
             storeFile.exists();
