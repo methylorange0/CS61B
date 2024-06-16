@@ -1,7 +1,5 @@
 package gitlet;
 
-import java.io.IOException;
-
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author dyc
  */
@@ -12,7 +10,8 @@ public class Main {
      */
     public static void main(String[] args) { // @source IntelliJ's help
         if (args.length == 0) {
-            throw new GitletException("Please enter a command.");
+            System.out.println("Please enter a command.");
+            System.exit(0);
         }
         String firstArg = args[0];
         switch (firstArg) {
@@ -62,9 +61,11 @@ public class Main {
                         Repository.restoreGivenBranch(args[1]);
                         break;
                     } else {
-                        throw new GitletException("Incorrect operands.");
+                        System.out.println("Incorrect operands.");
+                        System.exit(0);
                     }
                 }
+                break;
             case "branch":
                 validateNumArgs(args, 2);
                 Repository.createNewBranch(args[1]);
@@ -78,7 +79,8 @@ public class Main {
                 Repository.resetGivenCommit(args[1]);
                 break;
             default:
-                throw new GitletException("No command with that name exists");
+                System.out.println("No command with that name exists");
+                System.exit(0);
         }
     }
 
@@ -87,7 +89,8 @@ public class Main {
      */
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            throw new GitletException("Incorrect operands.");
+            System.out.println("Incorrect operands.");
+            System.exit(0);
         }
     }
 }

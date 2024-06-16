@@ -58,6 +58,8 @@ public class Repository {
     /** The HEAD file record the current working commit. */
     public static final File HEAD = join(GITLET_DIR, "HEAD");
 
+    private static final int HASH_LENGTH = 40;
+
 
     /** ---------------------------------------------------------------------------------------------------
      * main part
@@ -66,7 +68,8 @@ public class Repository {
     /** Init the repository. */
     public static void initRepo() { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
-            throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.exit(0);
         }
 
         // Create all the dirs and files.
@@ -111,7 +114,8 @@ public class Repository {
         File theFile = join(CWD, name);
         // Failure cases
         if (!theFile.exists()) {
-            throw new GitletException("File does not exist");
+            System.out.println("File does not exist");
+            System.exit(0);
         }
 
         String fileHash = sha1(readContents(theFile));
@@ -190,7 +194,8 @@ public class Repository {
             restrictedDelete(theFile);
         }
         if (!changed) {
-            throw new GitletException("No reason to remove the file.");
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
         }
     }
 
@@ -289,12 +294,14 @@ public class Repository {
 
         // Check if GIVEN version == current commit.
         if (branchName.equals(readContentsAsString(HEAD))) {
-            throw new GitletException("No need to checkout the current branch.");
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
         }
         // Check if the branch exists.
         File givenBranch = join(HEADS_DIR, branchName);
         if (!givenBranch.exists()) {
-            throw new GitletException("No such branch exists.");
+            System.out.println("No such branch exists.");
+            System.exit(0);
         }
 
         // Copy the files of GIVEN version
@@ -312,7 +319,8 @@ public class Repository {
     public static void createNewBranch(String branchName) {
         File newBranch = join(HEADS_DIR, branchName);
         if (newBranch.exists()) {
-            throw new GitletException("A branch with that name already exists.");
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
         }
         try {
             newBranch.createNewFile();
@@ -325,11 +333,13 @@ public class Repository {
     /** Deletes the branch with given name. */
     public static void deleteBranch(String branchName) {
         if (branchName.equals(readContentsAsString(HEAD))) {
-            throw new GitletException("Cannot remove the current branch.");
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
         }
         File deleteBranch = join(HEADS_DIR, branchName);
         if (!deleteBranch.exists()) {
-            throw new GitletException("A branch with that name does not exists.");
+            System.out.println("A branch with that name does not exists.");
+            System.exit(0);
         }
         deleteBranch.delete();
     }
@@ -362,10 +372,11 @@ public class Repository {
 
     /** Return a commit object with given hash, support abbreviated hash. */
     private static Commit readCommit(String hash) {
-        if (hash.length() == 40) {
+        if (hash.length() == HASH_LENGTH) {
             File commitFile = findCommits(hash);
             if (!commitFile.exists()) {
-                throw new GitletException("No commit with that id exists.");
+                System.out.println("No commit with that id exists.");
+                System.exit(0);
             }
             return readObject(commitFile, Commit.class);
         } else {
@@ -377,12 +388,15 @@ public class Repository {
                 }
             }
         }
-        throw new GitletException("No commit with that id exists.");
+        System.out.println("No commit with that id exists.");
+        System.exit(0);
+
+        return null;
     }
 
     /** Return the complete hash of a hash. */
     private static String completeHash(String hash) {
-        if (hash.length() == 40) {
+        if (hash.length() == HASH_LENGTH) {
             return hash;
         } else {
             List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
@@ -393,7 +407,9 @@ public class Repository {
                 }
             }
         }
-        throw new GitletException("No commit with that id exists.");
+        System.out.println("No commit with that id exists.");
+        System.exit(0);
+        return null;
     }
 
     /** Return the file with the given hash. */
@@ -402,7 +418,7 @@ public class Repository {
     }
 
     /** use this method to store a commit. */
-    public static void storeCommit(Commit storeCommit, String hash){
+    public static void storeCommit(Commit storeCommit, String hash) {
         File storeFile = join(COMMITS_DIR, hash);
         if (!storeFile.exists()) {
             try {
@@ -444,7 +460,7 @@ public class Repository {
 
     /** Helper method to match a prefix hash. */
     private static boolean matchPrefixHash(String prefix, String hash) {
-        if (prefix.length() > 40) {
+        if (prefix.length() > HASH_LENGTH) {
             return false;
         }
         for (int i = 0; i < prefix.length(); i++) {
@@ -463,7 +479,8 @@ public class Repository {
         for (int i = 0; i < workingFiles.size(); i++) {
             String fileName = workingFiles.get(i);
             if (!currentCommit().isContainFile(fileName)) {
-                throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
             }
         }
 
