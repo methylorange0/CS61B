@@ -98,7 +98,8 @@ public class Repository {
 
         // Save this init commit object.
         Commit initCommit = new Commit();
-        initCommit.save();
+        String initHash = sha1(serialize(initCommit));
+        initCommit.save(initHash);
 
         // Change the pointer and HEAD.
         File master = join(HEADS_DIR, "master");
@@ -107,7 +108,7 @@ public class Repository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        writeContents(master, initCommit.hash());
+        writeContents(master, initHash);
         writeContents(HEAD, "master");
     }
 
@@ -143,8 +144,9 @@ public class Repository {
 
     /** Make a commit. */
     public static void makeCommit(String msg) {
-        Commit prevCommit = currentCommit();
-        Commit theCommit = new Commit(msg, prevCommit);
+        String prevHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
+        Commit theCommit = new Commit(msg, prevHash);
+        String theCommitHash = sha1(serialize(theCommit));
 
         // add or update tracking file
         List<String> addNames = plainFilenamesIn(AREA_DIR);
@@ -166,17 +168,18 @@ public class Repository {
         clearTable();
 
         // save commit and update pointer
-        theCommit.save();
+        theCommit.save(theCommitHash);
         String head = readContentsAsString(HEAD);
         File pointer = join(HEADS_DIR, head);
-        writeContents(pointer, theCommit.hash());
+        writeContents(pointer, theCommitHash);
     }
 
     /** Make a merge commit. */
     /** Make a commit. */
-    public static void makeMergeCommit(String msg, Commit anotherCommit) {
-        Commit prevCommit = currentCommit();
-        Commit theCommit = new Commit(msg, prevCommit, anotherCommit);
+    public static void makeMergeCommit(String msg, String anotherHash) {
+        String prevHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
+        Commit theCommit = new Commit(msg, prevHash, anotherHash);
+        String theCommitHash = sha1(serialize(theCommit));
 
         // add or update tracking file
         List<String> addNames = plainFilenamesIn(AREA_DIR);
@@ -198,10 +201,10 @@ public class Repository {
         clearTable();
 
         // save commit and update pointer
-        theCommit.save();
+        theCommit.save(theCommitHash);
         String head = readContentsAsString(HEAD);
         File pointer = join(HEADS_DIR, head);
-        writeContents(pointer, theCommit.hash());
+        writeContents(pointer, theCommitHash);
     }
 
     /** Delete tracking a file in the next commit. */
@@ -265,7 +268,7 @@ public class Repository {
             Commit thisCommit = readObject(thisFile, Commit.class);
             if (thisCommit.getMessage().equals(givenMsg)) {
                 have = true;
-                System.out.println(thisCommit.hash());
+                System.out.println(name);
             }
         }
         if (!have) {
@@ -433,11 +436,11 @@ public class Repository {
             String anotherFileHash = another.getBlobs().get(name);
             String spiltFileHash = spilt.getBlobs().get(name);
             if (headFileHash != null) {
-                if (headFileHash.equals(spiltFileHash) &&
-                        !headFileHash.equals(anotherFileHash)) {
+                if (headFileHash.equals(spiltFileHash)
+                        && !headFileHash.equals(anotherFileHash)) {
                     mergeAnotherFile(anotherHash, anotherFileHash, name);
-                } else if (!headFileHash.equals(spiltFileHash) &&
-                        !headFileHash.equals(anotherFileHash)) {
+                } else if (!headFileHash.equals(spiltFileHash)
+                        && !headFileHash.equals(anotherFileHash)) {
                     isConflict = true;
                     handleConflict(headFileHash, anotherFileHash, name);
                 }
@@ -449,7 +452,7 @@ public class Repository {
             }
         }
         String msg = "Merged " + branchName + "into " + readContentsAsString(HEAD);
-        makeMergeCommit(msg, another);
+        makeMergeCommit(msg, anotherHash);
         if (isConflict) {
             System.out.println("Encountered a merge conflict.");
         }
@@ -475,18 +478,18 @@ public class Repository {
         if (fileHash1 == null) {
             contents1 = "";
         } else {
-            contents1 = readContentsAsString(findBlobs(fileHash1))+ "\n";
+            contents1 = readContentsAsString(findBlobs(fileHash1)) + "\n";
         }
         if (fileHash2 == null) {
             contents2 = "";
         } else {
             contents2 = readContentsAsString(findBlobs(fileHash2)) + "\n";
         }
-        result = "<<<<<<< HEAD\n" +
-                contents1 +
-                "=======\n" +
-                contents2 +
-                ">>>>>>>";
+        result = "<<<<<<< HEAD\n"
+                + contents1
+                + "=======\n"
+                + contents2
+                + ">>>>>>>";
         writeContents(theFile, result);
     }
 
@@ -545,7 +548,7 @@ public class Repository {
     }
 
     /** Return a commit object with given hash, support abbreviated hash. */
-    private static Commit readCommit(String hash) {
+    public static Commit readCommit(String hash) {
         if (hash.length() == HASH_LENGTH) {
             File commitFile = findCommits(hash);
             if (!commitFile.exists()) {

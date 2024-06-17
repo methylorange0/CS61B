@@ -45,10 +45,11 @@ public class Commit implements Serializable {
         blobs = new HashMap<>();
     }
     /** Normal commit. */
-    public Commit(String msg, Commit prev) {
+    public Commit(String msg, String prevHash) {
         message = msg;
         time = new Date();
-        parent = sha1(serialize(prev));
+        Commit prev = Repository.readCommit(prevHash);
+        parent = prevHash;
         parent2 = null;
         blobs = new HashMap<>();
         if (!prev.blobs.isEmpty()) {
@@ -56,11 +57,13 @@ public class Commit implements Serializable {
         }
     }
     /** Merge commit. */
-    public Commit(String msg, Commit prev, Commit anotherCommit) {
+    public Commit(String msg, String prevHash, String anotherHash) {
         message = msg;
         time = new Date();
-        parent = sha1(serialize(prev));
-        parent2 = sha1(serialize(anotherCommit));
+        Commit prev = Repository.readCommit(prevHash);
+        Commit another = Repository.readCommit(anotherHash);
+        parent = prevHash;
+        parent2 = anotherHash;
         blobs = new HashMap<>();
         if (!prev.blobs.isEmpty()) {
             blobs.putAll(prev.blobs);
@@ -68,14 +71,10 @@ public class Commit implements Serializable {
     }
 
     /** Save this commit. */
-    public void save() {
-        Repository.storeCommit(this, hash());
+    public void save(String hash) {
+        Repository.storeCommit(this, hash);
     }
 
-    /** Return the Hash of this commit. */
-    public String hash() {
-        return sha1(serialize(this));
-    }
 
     /** Return the message of this commit. */
     public String getMessage() {
