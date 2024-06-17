@@ -68,7 +68,11 @@ public class Commit implements Serializable {
 
     /** Return the message of this commit. */
     public String getMessage() {
-        return message;
+        return message.toString();
+    }
+    /** Return the blobs of this commit. */
+    public HashMap<String, String> getBlobs() {
+        return blobs;
     }
 
     /** Add a record to the commit blobs from the staging area. */
@@ -93,7 +97,8 @@ public class Commit implements Serializable {
             System.out.println("It's not a working directory!");
             System.exit(0);
         }
-        for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
+        //@source https://www.runoob.com/java/java-hashmap.html
+        for (String name : blobs.keySet()) {
             if (name.equals(fileName)) {
                 File workFile = join(workDir, name);
                 if (!workFile.exists()) {
@@ -117,7 +122,8 @@ public class Commit implements Serializable {
             System.out.println("It's not a working directory!");
             System.exit(0);
         }
-        for (String name : blobs.keySet()) {  //@source https://www.runoob.com/java/java-hashmap.html
+        //@source https://www.runoob.com/java/java-hashmap.html
+        for (String name : blobs.keySet()) {
             File workFile = join(workDir, name);
             if (!workFile.exists()) {
                 try {
@@ -138,12 +144,12 @@ public class Commit implements Serializable {
     }
     /** Return hash of file in the commit. */
     public String fileHash(String name) {
-        return blobs.get(name);
+        return blobs.get(name).toString();
     }
 
     /** Return parent commit hash. */
     public String prev() {
-        return parent;
+        return parent.toString();
     }
 
     /** Print out this commit. */
@@ -151,9 +157,11 @@ public class Commit implements Serializable {
         System.out.println("===");
         System.out.println("commit " + hash);
         if (parent2 != null) {
-            System.out.println("Merged " + parent.substring(0, 7) + " " + parent2.substring(0, 7));
+            System.out.println("Merged " + parent.substring(0, 7) +
+                    " " + parent2.substring(0, 7));
         }
-        TimeZone timeZone = TimeZone.getTimeZone("GMT+08:00"); //@source https://tongyi.aliyun.com/qianwen/
+        //@source https://tongyi.aliyun.com/qianwen/
+        TimeZone timeZone = TimeZone.getTimeZone("GMT+08:00");
         SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyy Z");
         sdf.setTimeZone(timeZone);
         System.out.println("Date: " + sdf.format(time));

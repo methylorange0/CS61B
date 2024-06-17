@@ -2,8 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static gitlet.Utils.*;
 import static gitlet.Utils.restrictedDelete;
@@ -61,14 +60,15 @@ public class Repository {
     private static final int HASH_LENGTH = 40;
 
 
-    /** ---------------------------------------------------------------------------------------------------
+    /** ------------------------------------------------------------------------
      * main part
      */
 
     /** Init the repository. */
     public static void initRepo() { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already " +
+                    "exists in the current directory.");
             System.exit(0);
         }
 
@@ -204,9 +204,9 @@ public class Repository {
         String head = readContentsAsString(HEAD);
         String crusorHash = readContentsAsString(join(HEADS_DIR, head));
         while (crusorHash != null) {
-            Commit crusor = readObject(findCommits(crusorHash), Commit.class);
-            crusor.printout(crusorHash);
-            crusorHash = crusor.prev();
+            Commit cursor = readCommit(crusorHash);
+            cursor.printout(crusorHash);
+            crusorHash = cursor.prev();
         }
     }
 
@@ -305,7 +305,8 @@ public class Repository {
         }
 
         // Copy the files of GIVEN version
-        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)), Commit.class);
+        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)),
+                Commit.class);
         restoreGivenCommitVersion(givenCommit);
 
         // Change HEAD pointer.
@@ -355,10 +356,101 @@ public class Repository {
         writeContents(branchHead, completeHash(hash));
     }
 
+    /** Merge files from the given branch into the current branch. */
+    public static void mergeBranch(String branchName) {
+        // Find the hash of spilt point.
+        String headHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
+        File anotherBranch = join(HEADS_DIR, branchName);
+        if (!anotherBranch.exists()) {
+            System.out.println("A branch with that name does not exists.");
+            System.exit(0);
+        }
+        String anotherHash = readContentsAsString(anotherBranch);
+        String spiltPointHash = spiltPointHash(headHash, anotherHash);
+
+        // A line.
+        if (spiltPointHash.equals(anotherHash)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+        if (spiltPointHash.equals(headHash)) {
+            restoreGivenBranch(branchName);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+
+        // A tree.
+        // For files:
+        // spilt == HEAD != another : checkout another version file, stage it;
+        //                            or remove like another.
+        // spilt != another != HEAD : conflict.
+        // spilt == another != HEAD : nothing.
+        // spilt != another == HEAD : nothing.
+        // spilt == another == HEAD : nothing.
+        Set<String> checked = new HashSet<>();
+        Commit head = readCommit(headHash);
+        Commit another = readCommit(anotherHash);
+        Commit spilt = readCommit(spiltPointHash);
+        Boolean conflicted = false;
+        for (String name : head.getBlobs().keySet()) {
+            if (!checked.contains(name)) {
+                checked.add(name);
+                String headFileHash = head.getBlobs().get(name);
+                String anotherFileHash = another.getBlobs().get(name);
+                String spiltFileHash = spilt.getBlobs().get(name);
+                // Case 1.
+                if (headFileHash.equals(spiltFileHash) &&
+                !headFileHash.equals(anotherFileHash)) {
+                    mergeAnotherFile(anotherHash, anotherFileHash, name);
+                } else if (!headFileHash.equals(spiltFileHash) &&  //Case 2.
+                        !headFileHash.equals(anotherFileHash)) {
+                    conflicted = true;
+                    handleConflict(headFileHash, anotherFileHash, name);
+                }
+            }
+        }
+
+
+    }
+
+    /** Helper method to check out another version file, stage it; or remove like another. */
+    private static void mergeAnotherFile(String commitHash, String fileHash, String fileName) {
+        if (fileHash == null) {
+            removeFile(fileName);
+        } else {
+            restoreFileGivenVersion(commitHash, fileName);
+            addFile(fileName);
+        }
+    }
+
+    /** Helper method to handle conflict situation. */
+    private static void handleConflict(String fileHash1, String fileHash2, String fileName) {
+        File theFile = join(CWD, fileName);
+        String contents1;
+        String contents2;
+        String result;
+        if (fileHash1 == null) {
+            contents1 = "";
+        } else {
+            contents1 = readContentsAsString(findBlobs(fileHash1))+ "\n";
+        }
+        if (fileHash2 == null) {
+            contents2 = "";
+        } else {
+            contents2 = readContentsAsString(findBlobs(fileHash2)) + "\n";
+        }
+        result = "<<<<<<< HEAD\n" +
+                contents1 +
+                "=======\n" +
+                contents2 +
+                ">>>>>>>";
+        writeContents(theFile, result);
+    }
 
 
 
-    /** ---------------------------------------------------------------------------------------------
+
+    /** ----------------------------------------------------------------
      * helper method
      */
 
@@ -479,7 +571,8 @@ public class Repository {
         for (int i = 0; i < workingFiles.size(); i++) {
             String fileName = workingFiles.get(i);
             if (!currentCommit().isContainFile(fileName)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; delete it, " +
+                        "or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -502,5 +595,45 @@ public class Repository {
         // Copy the files of GIVEN version
         givenCommit.restoreVersion(CWD);
 
+    }
+
+
+    /** Helper method to find the spilt point with given two commits hash.
+     *  Return the hash of the spilt point.
+     */
+    private static String spiltPointHash(String headHash, String anotherHash) {
+        int headAncestorsNum = ancestorsNumber(headHash);
+        int anotherAncestorsNum = ancestorsNumber(anotherHash);
+        // Adjust to the same distance.
+        if (headAncestorsNum > anotherAncestorsNum) {
+            for (int i = 0; i < (headAncestorsNum - anotherAncestorsNum); i++) {
+                Commit cursor = readCommit(headHash);
+                headHash = cursor.prev();
+            }
+        } else {
+            for (int i = 0; i < (anotherAncestorsNum - headAncestorsNum); i++) {
+                Commit cursor = readCommit(anotherHash);
+                anotherHash = cursor.prev();
+            }
+        }
+        // Move together.
+        while (!headHash.equals(anotherHash)) {
+            Commit cursorHead = readCommit(headHash);
+            headHash = cursorHead.prev();
+            Commit cursorAnother = readCommit(headHash);
+            headHash = cursorAnother.prev();
+        }
+        return headHash;
+    }
+    
+    /** Return the ancestor's number of the given commit hash. */
+    private static int ancestorsNumber(String hash) {
+        int result = 0;
+        while (hash != null) {
+            Commit cursor = readCommit(hash);
+            result += 1;
+            hash = cursor.prev();
+        }
+        return result;
     }
 }
