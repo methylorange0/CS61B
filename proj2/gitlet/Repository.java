@@ -2,7 +2,10 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static gitlet.Utils.*;
 import static gitlet.Utils.restrictedDelete;
@@ -60,15 +63,14 @@ public class Repository {
     private static final int HASH_LENGTH = 40;
 
 
-    /** ------------------------------------------------------------------------
+    /** ---------------------------------------------------------------------------------------------------
      * main part
      */
 
     /** Init the repository. */
     public static void initRepo() { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already " +
-                    "exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
 
@@ -171,6 +173,7 @@ public class Repository {
     }
 
     /** Make a merge commit. */
+    /** Make a commit. */
     public static void makeMergeCommit(String msg, Commit anotherCommit) {
         Commit prevCommit = currentCommit();
         Commit theCommit = new Commit(msg, prevCommit, anotherCommit);
@@ -235,9 +238,9 @@ public class Repository {
         String head = readContentsAsString(HEAD);
         String crusorHash = readContentsAsString(join(HEADS_DIR, head));
         while (crusorHash != null) {
-            Commit cursor = readCommit(crusorHash);
-            cursor.printout(crusorHash);
-            crusorHash = cursor.prev();
+            Commit crusor = readObject(findCommits(crusorHash), Commit.class);
+            crusor.printout(crusorHash);
+            crusorHash = crusor.prev();
         }
     }
 
@@ -336,8 +339,7 @@ public class Repository {
         }
 
         // Copy the files of GIVEN version
-        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)),
-                Commit.class);
+        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)), Commit.class);
         restoreGivenCommitVersion(givenCommit);
 
         // Change HEAD pointer.
@@ -432,7 +434,7 @@ public class Repository {
             String spiltFileHash = spilt.getBlobs().get(name);
             if (headFileHash != null) {
                 if (headFileHash.equals(spiltFileHash) &&
-                !headFileHash.equals(anotherFileHash)) {
+                        !headFileHash.equals(anotherFileHash)) {
                     mergeAnotherFile(anotherHash, anotherFileHash, name);
                 } else if (!headFileHash.equals(spiltFileHash) &&
                         !headFileHash.equals(anotherFileHash)) {
@@ -440,8 +442,8 @@ public class Repository {
                     handleConflict(headFileHash, anotherFileHash, name);
                 }
             } else if (spiltFileHash != null && !spiltFileHash.equals(anotherFileHash)) {
-                    isConflict = true;
-                    handleConflict(headFileHash, anotherFileHash, name);
+                isConflict = true;
+                handleConflict(headFileHash, anotherFileHash, name);
             } else {
                 mergeAnotherFile(anotherHash, anotherFileHash, name);
             }
@@ -488,10 +490,49 @@ public class Repository {
         writeContents(theFile, result);
     }
 
+    /** Helper method to find the spilt point with given two commits hash.
+     *  Return the hash of the spilt point.
+     */
+    private static String spiltPointHash(String headHash, String anotherHash) {
+        int headAncestorsNum = ancestorsNumber(headHash);
+        int anotherAncestorsNum = ancestorsNumber(anotherHash);
+        // Adjust to the same distance.
+        if (headAncestorsNum > anotherAncestorsNum) {
+            for (int i = 0; i < (headAncestorsNum - anotherAncestorsNum); i++) {
+                Commit cursor = readCommit(headHash);
+                headHash = cursor.prev();
+            }
+        } else {
+            for (int i = 0; i < (anotherAncestorsNum - headAncestorsNum); i++) {
+                Commit cursor = readCommit(anotherHash);
+                anotherHash = cursor.prev();
+            }
+        }
+        // Move together.
+        while (!headHash.equals(anotherHash)) {
+            Commit cursorHead = readCommit(headHash);
+            headHash = cursorHead.prev();
+            Commit cursorAnother = readCommit(headHash);
+            headHash = cursorAnother.prev();
+        }
+        return headHash;
+    }
+
+    /** Return the ancestor's number of the given commit hash. */
+    private static int ancestorsNumber(String hash) {
+        int result = 0;
+        while (hash != null) {
+            Commit cursor = readCommit(hash);
+            result += 1;
+            hash = cursor.prev();
+        }
+        return result;
+    }
 
 
 
-    /** ----------------------------------------------------------------
+
+    /** ---------------------------------------------------------------------------------------------
      * helper method
      */
 
@@ -612,8 +653,7 @@ public class Repository {
         for (int i = 0; i < workingFiles.size(); i++) {
             String fileName = workingFiles.get(i);
             if (!currentCommit().isContainFile(fileName)) {
-                System.out.println("There is an untracked file in the way; delete it, " +
-                        "or add and commit it first.");
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -636,45 +676,5 @@ public class Repository {
         // Copy the files of GIVEN version
         givenCommit.restoreVersion(CWD);
 
-    }
-
-
-    /** Helper method to find the spilt point with given two commits hash.
-     *  Return the hash of the spilt point.
-     */
-    private static String spiltPointHash(String headHash, String anotherHash) {
-        int headAncestorsNum = ancestorsNumber(headHash);
-        int anotherAncestorsNum = ancestorsNumber(anotherHash);
-        // Adjust to the same distance.
-        if (headAncestorsNum > anotherAncestorsNum) {
-            for (int i = 0; i < (headAncestorsNum - anotherAncestorsNum); i++) {
-                Commit cursor = readCommit(headHash);
-                headHash = cursor.prev();
-            }
-        } else {
-            for (int i = 0; i < (anotherAncestorsNum - headAncestorsNum); i++) {
-                Commit cursor = readCommit(anotherHash);
-                anotherHash = cursor.prev();
-            }
-        }
-        // Move together.
-        while (!headHash.equals(anotherHash)) {
-            Commit cursorHead = readCommit(headHash);
-            headHash = cursorHead.prev();
-            Commit cursorAnother = readCommit(headHash);
-            headHash = cursorAnother.prev();
-        }
-        return headHash;
-    }
-    
-    /** Return the ancestor's number of the given commit hash. */
-    private static int ancestorsNumber(String hash) {
-        int result = 0;
-        while (hash != null) {
-            Commit cursor = readCommit(hash);
-            result += 1;
-            hash = cursor.prev();
-        }
-        return result;
     }
 }
