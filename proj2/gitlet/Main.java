@@ -80,7 +80,7 @@ public class Main {
                 break;
             case "merge":
                 validateNumArgs(args, 2);
-
+                Repository.mergeBranch(args[1]);
                 break;
             default:
                 System.out.println("No command with that name exists");

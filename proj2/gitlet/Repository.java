@@ -170,6 +170,37 @@ public class Repository {
         writeContents(pointer, theCommit.hash());
     }
 
+    /** Make a merge commit. */
+    public static void makeMergeCommit(String msg, Commit anotherCommit) {
+        Commit prevCommit = currentCommit();
+        Commit theCommit = new Commit(msg, prevCommit, anotherCommit);
+
+        // add or update tracking file
+        List<String> addNames = plainFilenamesIn(AREA_DIR);
+        for (int i = 0; i < addNames.size(); i++) {
+            String name = addNames.get(i);
+            File areaFile = join(AREA_DIR, name);
+            String hash = sha1(readContents(areaFile));
+            storeBlobs(areaFile, hash);
+            theCommit.addBlobRecord(name, hash);
+            areaFile.delete();
+        }
+
+        // delete tracking
+        ArrayList<String> deleteList = readTable();
+        for (int i = 0; i < deleteList.size(); i++) {
+            String name = deleteList.get(i);
+            theCommit.deleteBlobRecord(name);
+        }
+        clearTable();
+
+        // save commit and update pointer
+        theCommit.save();
+        String head = readContentsAsString(HEAD);
+        File pointer = join(HEADS_DIR, head);
+        writeContents(pointer, theCommit.hash());
+    }
+
     /** Delete tracking a file in the next commit. */
     public static void removeFile(String name) {
         Boolean changed = false;
@@ -380,36 +411,46 @@ public class Repository {
         }
 
         // A tree.
-        // For files:
+        // For each file:
         // spilt == HEAD != another : checkout another version file, stage it;
         //                            or remove like another.
         // spilt != another != HEAD : conflict.
         // spilt == another != HEAD : nothing.
         // spilt != another == HEAD : nothing.
         // spilt == another == HEAD : nothing.
-        Set<String> checked = new HashSet<>();
         Commit head = readCommit(headHash);
         Commit another = readCommit(anotherHash);
         Commit spilt = readCommit(spiltPointHash);
-        Boolean conflicted = false;
-        for (String name : head.getBlobs().keySet()) {
-            if (!checked.contains(name)) {
-                checked.add(name);
-                String headFileHash = head.getBlobs().get(name);
-                String anotherFileHash = another.getBlobs().get(name);
-                String spiltFileHash = spilt.getBlobs().get(name);
-                // Case 1.
+        Set<String> allSet = new HashSet<>();
+        allSet.addAll(head.getBlobs().keySet());
+        allSet.addAll(another.getBlobs().keySet());
+        allSet.addAll(spilt.getBlobs().keySet());
+        Boolean isConflict = false;
+        for (String name : allSet) {
+            String headFileHash = head.getBlobs().get(name);
+            String anotherFileHash = another.getBlobs().get(name);
+            String spiltFileHash = spilt.getBlobs().get(name);
+            if (headFileHash != null) {
                 if (headFileHash.equals(spiltFileHash) &&
                 !headFileHash.equals(anotherFileHash)) {
                     mergeAnotherFile(anotherHash, anotherFileHash, name);
-                } else if (!headFileHash.equals(spiltFileHash) &&  //Case 2.
+                } else if (!headFileHash.equals(spiltFileHash) &&
                         !headFileHash.equals(anotherFileHash)) {
-                    conflicted = true;
+                    isConflict = true;
                     handleConflict(headFileHash, anotherFileHash, name);
                 }
+            } else if (spiltFileHash != null && !spiltFileHash.equals(anotherFileHash)) {
+                    isConflict = true;
+                    handleConflict(headFileHash, anotherFileHash, name);
+            } else {
+                mergeAnotherFile(anotherHash, anotherFileHash, name);
             }
         }
-
+        String msg = "Merged " + branchName + "into " + readContentsAsString(HEAD);
+        makeMergeCommit(msg, another);
+        if (isConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
 
     }
 

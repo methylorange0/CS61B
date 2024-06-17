@@ -55,6 +55,17 @@ public class Commit implements Serializable {
             blobs.putAll(prev.blobs);
         }
     }
+    /** Merge commit. */
+    public Commit(String msg, Commit prev, Commit anotherCommit) {
+        message = msg;
+        time = new Date();
+        parent = sha1(serialize(prev));
+        parent2 = sha1(serialize(anotherCommit));
+        blobs = new HashMap<>();
+        if (!prev.blobs.isEmpty()) {
+            blobs.putAll(prev.blobs);
+        }
+    }
 
     /** Save this commit. */
     public void save() {
