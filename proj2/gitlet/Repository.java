@@ -433,12 +433,16 @@ public class Repository {
         // Change pointer.
         File branchHead = join(HEADS_DIR, readContentsAsString(HEAD));
         writeContents(branchHead, completeHash(hash));
-
     }
 
     /** Merge files from the given branch into the current branch. */
     public static void mergeBranch(String branchName) {
         checkInit();
+        // Check merge a different branch.
+        if (branchName.equals(readContents(HEAD))) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
         // Find the hash of spilt point.
         String headHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
         File anotherBranch = join(HEADS_DIR, branchName);
@@ -491,7 +495,7 @@ public class Repository {
                 handleConflict(headFileHash, anotherFileHash, name);
             }
         }
-        String msg = "Merged " + branchName + "into " + readContentsAsString(HEAD);
+        String msg = "Merged " + branchName + " into " + readContentsAsString(HEAD);
         makeMergeCommit(msg, anotherHash);
         if (isConflict) {
             System.out.println("Encountered a merge conflict.");
@@ -528,12 +532,12 @@ public class Repository {
         if (fileHash1 == null) {
             contents1 = "";
         } else {
-            contents1 = readContentsAsString(findBlobs(fileHash1)) + "\n";
+            contents1 = readContentsAsString(findBlobs(fileHash1));
         }
         if (fileHash2 == null) {
             contents2 = "";
         } else {
-            contents2 = readContentsAsString(findBlobs(fileHash2)) + "\n";
+            contents2 = readContentsAsString(findBlobs(fileHash2));
         }
         result = "<<<<<<< HEAD\n"
                 + contents1
