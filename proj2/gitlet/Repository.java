@@ -123,6 +123,7 @@ public class Repository {
 
     /** Add file to the staging area. */
     public static void addFile(String name) {
+        checkInit();
         File theFile = join(CWD, name);
         // Failure cases
         if (!theFile.exists()) {
@@ -158,6 +159,7 @@ public class Repository {
 
     /** Make a commit. */
     public static void makeCommit(String msg) {
+        checkInit();
         String prevHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
         Commit theCommit = new Commit(msg, prevHash);
         String theCommitHash = sha1(serialize(theCommit));
@@ -165,7 +167,7 @@ public class Repository {
         // Check need to commit.
         List<String> addList = plainFilenamesIn(AREA_DIR);
         ArrayList<String> deleteList = readTable();
-        if (addList == null && deleteList.isEmpty()) {
+        if (addList.isEmpty() && deleteList.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -237,6 +239,7 @@ public class Repository {
 
     /** Delete tracking a file in the next commit. */
     public static void removeFile(String name) {
+        checkInit();
         boolean changed = false;
         File areaFile = join(AREA_DIR, name);
         // If this file is in the staging area, remove the staging file.
@@ -266,6 +269,7 @@ public class Repository {
 
     /** Print out the commit log. */
     public static void printLog() {
+        checkInit();
         String head = readContentsAsString(HEAD);
         String crusorHash = readContentsAsString(join(HEADS_DIR, head));
         while (crusorHash != null) {
@@ -277,6 +281,7 @@ public class Repository {
 
     /** Print out all the commits in the uncertain way. */
     public static void globalPrint() {
+        checkInit();
         List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
         for (int i = 0; i < commitNames.size(); i++) {
             String name = commitNames.get(i);
@@ -288,6 +293,7 @@ public class Repository {
 
     /** Print out the ids of all commits that have the given commit message. */
     public static void printIdWithGivenMessage(String givenMsg) {
+        checkInit();
         List<String> commitNames = plainFilenamesIn(COMMITS_DIR);
         Boolean have = false;
         for (int i = 0; i < commitNames.size(); i++) {
@@ -306,6 +312,7 @@ public class Repository {
 
     /** Print out the status of this Repository. */
     public static void printRepoStatus() {
+        checkInit();
         System.out.println("=== Branches ===");
         List<String> branchNames = plainFilenamesIn(HEADS_DIR);
         String head = readContentsAsString(HEAD);
@@ -344,18 +351,21 @@ public class Repository {
 
     /** Restore a file of HEAD version. */
     public static void restoreFileInHead(String fileName) {
+        checkInit();
         Commit headCommit = currentCommit();
         headCommit.restoreFile(CWD, fileName);
     }
 
     /** Restore a file of GIVEN version. */
     public static void restoreFileGivenVersion(String hash, String fileName) {
+        checkInit();
         Commit givenCommit = readCommit(hash);
         givenCommit.restoreFile(CWD, fileName);
     }
 
     /** Restore the GIVEN branch. */
     public static void restoreGivenBranch(String branchName) {
+        checkInit();
 
         // Check if GIVEN version == current commit.
         if (branchName.equals(readContentsAsString(HEAD))) {
@@ -383,6 +393,7 @@ public class Repository {
 
     /** Create a new branch with given name, point at the HEAD commit. */
     public static void createNewBranch(String branchName) {
+        checkInit();
         File newBranch = join(HEADS_DIR, branchName);
         if (newBranch.exists()) {
             System.out.println("A branch with that name already exists.");
@@ -399,6 +410,7 @@ public class Repository {
 
     /** Deletes the branch with given name. */
     public static void deleteBranch(String branchName) {
+        checkInit();
         if (branchName.equals(readContentsAsString(HEAD))) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
@@ -413,17 +425,20 @@ public class Repository {
 
     /** Check out all the files tracked by the given commit. */
     public static void resetGivenCommit(String hash) {
-        // Find the commit.
+        checkInit();
+        // Checkout given commit.
         Commit givenCommit = readCommit(hash);
-        // Copy the files of GIVEN commit
-        givenCommit.restoreVersion(CWD);
-        // Change pointers.
+        restoreGivenCommitVersion(givenCommit);
+
+        // Change pointer.
         File branchHead = join(HEADS_DIR, readContentsAsString(HEAD));
         writeContents(branchHead, completeHash(hash));
+
     }
 
     /** Merge files from the given branch into the current branch. */
     public static void mergeBranch(String branchName) {
+        checkInit();
         // Find the hash of spilt point.
         String headHash = readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD)));
         File anotherBranch = join(HEADS_DIR, branchName);
@@ -465,20 +480,15 @@ public class Repository {
             String headFileHash = head.getBlobs().get(name);
             String anotherFileHash = another.getBlobs().get(name);
             String spiltFileHash = spilt.getBlobs().get(name);
-            if (headFileHash != null) {
-                if (headFileHash.equals(spiltFileHash)
-                        && !headFileHash.equals(anotherFileHash)) {
-                    mergeAnotherFile(anotherHash, anotherFileHash, name);
-                } else if (!headFileHash.equals(spiltFileHash)
-                        && !headFileHash.equals(anotherFileHash)) {
-                    isConflict = true;
-                    handleConflict(headFileHash, anotherFileHash, name);
-                }
-            } else if (spiltFileHash != null && !spiltFileHash.equals(anotherFileHash)) {
+
+            if (isSameHash(spiltFileHash, headFileHash)                  // Case 1:
+                    && !isSameHash(spiltFileHash, anotherFileHash)) {
+                mergeAnotherFile(anotherHash, anotherFileHash, name);
+            } else if (!isSameHash(spiltFileHash, headFileHash)          // Case 2:
+                    && !isSameHash(spiltFileHash, anotherFileHash)
+                    && !isSameHash(headFileHash, anotherFileHash)) {
                 isConflict = true;
                 handleConflict(headFileHash, anotherFileHash, name);
-            } else {
-                mergeAnotherFile(anotherHash, anotherFileHash, name);
             }
         }
         String msg = "Merged " + branchName + "into " + readContentsAsString(HEAD);
@@ -487,6 +497,16 @@ public class Repository {
             System.out.println("Encountered a merge conflict.");
         }
 
+    }
+
+    /** Helper method to compare two hash. */
+    private static boolean isSameHash(String hash1, String hash2) {
+        if (hash1 == null && hash2 == null) {
+            return true;
+        } else if (hash1 == null || hash2 == null) {
+            return false;
+        }
+        return hash1.equals(hash2);
     }
 
     /** Helper method to check out another version file, stage it; or remove like another. */
@@ -545,8 +565,8 @@ public class Repository {
         while (!headHash.equals(anotherHash)) {
             Commit cursorHead = readCommit(headHash);
             headHash = cursorHead.prev();
-            Commit cursorAnother = readCommit(headHash);
-            headHash = cursorAnother.prev();
+            Commit cursorAnother = readCommit(anotherHash);
+            anotherHash = cursorAnother.prev();
         }
         return headHash;
     }

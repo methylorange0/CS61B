@@ -21,37 +21,30 @@ public class Main {
                 break;
             case "add":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.addFile(args[1]);
                 break;
             case "commit":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.makeCommit(args[1]);
                 break;
             case "rm":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.removeFile(args[1]);
                 break;
             case "log":
                 validateNumArgs(args, 1);
-                Repository.checkInit();
                 Repository.printLog();
                 break;
             case "global-log":
                 validateNumArgs(args, 1);
-                Repository.checkInit();
                 Repository.globalPrint();
                 break;
             case "find":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.printIdWithGivenMessage(args[1]);
                 break;
             case "status":
                 validateNumArgs(args, 1);
-                Repository.checkInit();
                 Repository.printRepoStatus();
                 break;
             case "checkout":
@@ -59,15 +52,12 @@ public class Main {
                     String secondArg = args[1];
                     if (secondArg.equals("--")) {
                         validateNumArgs(args, 3);
-                        Repository.checkInit();
                         Repository.restoreFileInHead(args[2]);
                         break;
                     } else if (args.length == 4 && args[2].equals("--")) {
-                        Repository.checkInit();
                         Repository.restoreFileGivenVersion(args[1], args[3]);
                         break;
                     } else if (args.length == 2) {
-                        Repository.checkInit();
                         Repository.restoreGivenBranch(args[1]);
                         break;
                     } else {
@@ -78,18 +68,19 @@ public class Main {
                 break;
             case "branch":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.createNewBranch(args[1]);
                 break;
             case "rm-branch":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.deleteBranch(args[1]);
                 break;
             case "reset":
                 validateNumArgs(args, 2);
-                Repository.checkInit();
                 Repository.resetGivenCommit(args[1]);
+                break;
+            case "merge":
+                validateNumArgs(args, 2);
+                Repository.mergeBranch(args[1]);
                 break;
             default:
                 System.out.println("No command with that name exists");
