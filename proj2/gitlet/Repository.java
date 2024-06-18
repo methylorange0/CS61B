@@ -63,14 +63,15 @@ public class Repository {
     private static final int HASH_LENGTH = 40;
 
 
-    /** ---------------------------------------------------------------------------------------------------
+    /** ---------------------------------------------------------------------------------------
      * main part
      */
 
     /** Init the repository. */
     public static void initRepo() { // @source IntelliJ's help
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists "
+                    + "in the current directory.");
             System.exit(0);
         }
 
@@ -110,6 +111,14 @@ public class Repository {
         }
         writeContents(master, initHash);
         writeContents(HEAD, "master");
+
+    }
+    /** Check CWD is initialized. */
+    public static void checkInit() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory");
+            System.exit(0);
+        }
     }
 
     /** Add file to the staging area. */
@@ -124,6 +133,11 @@ public class Repository {
         String fileHash = sha1(readContents(theFile));
         File areaFile = join(AREA_DIR, name);
         Commit currentCommit = currentCommit();
+
+        // If this file exist in the TABLE, remove it form TABLE
+        ArrayList<String> deleteList = readTable();
+        deleteList.remove(name);
+        writeObject(TABLE, deleteList);
 
         // if the current working file == the current commit file, delete areaFile if it exists,
         if (currentCommit.isContainFile(name) && currentCommit.fileHash(name).equals(fileHash)) {
@@ -148,6 +162,20 @@ public class Repository {
         Commit theCommit = new Commit(msg, prevHash);
         String theCommitHash = sha1(serialize(theCommit));
 
+        // Check need to commit.
+        List<String> addList = plainFilenamesIn(AREA_DIR);
+        ArrayList<String> deleteList = readTable();
+        if (addList == null && deleteList.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+
+        // Check msg is not empty.
+        if (msg.isEmpty()) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
+
         // add or update tracking file
         List<String> addNames = plainFilenamesIn(AREA_DIR);
         for (int i = 0; i < addNames.size(); i++) {
@@ -160,9 +188,7 @@ public class Repository {
         }
 
         // delete tracking
-        ArrayList<String> deleteList = readTable();
-        for (int i = 0; i < deleteList.size(); i++) {
-            String name = deleteList.get(i);
+        for (String name : deleteList) {
             theCommit.deleteBlobRecord(name);
         }
         clearTable();
@@ -172,6 +198,7 @@ public class Repository {
         String head = readContentsAsString(HEAD);
         File pointer = join(HEADS_DIR, head);
         writeContents(pointer, theCommitHash);
+
     }
 
     /** Make a merge commit. */
@@ -205,11 +232,12 @@ public class Repository {
         String head = readContentsAsString(HEAD);
         File pointer = join(HEADS_DIR, head);
         writeContents(pointer, theCommitHash);
+
     }
 
     /** Delete tracking a file in the next commit. */
     public static void removeFile(String name) {
-        Boolean changed = false;
+        boolean changed = false;
         File areaFile = join(AREA_DIR, name);
         // If this file is in the staging area, remove the staging file.
         if (areaFile.exists()) {
@@ -342,7 +370,8 @@ public class Repository {
         }
 
         // Copy the files of GIVEN version
-        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)), Commit.class);
+        Commit givenCommit = readObject(findCommits(readContentsAsString(givenBranch)),
+                Commit.class);
         restoreGivenCommitVersion(givenCommit);
 
         // Change HEAD pointer.
@@ -364,7 +393,8 @@ public class Repository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        writeContents(newBranch, readContentsAsString(join(HEADS_DIR, readContentsAsString(HEAD))));
+        writeContents(newBranch, readContentsAsString(join(HEADS_DIR,
+                readContentsAsString(HEAD))));
     }
 
     /** Deletes the branch with given name. */
@@ -535,7 +565,7 @@ public class Repository {
 
 
 
-    /** ---------------------------------------------------------------------------------------------
+    /** -----------------------------------------------------------------------
      * helper method
      */
 
@@ -656,7 +686,8 @@ public class Repository {
         for (int i = 0; i < workingFiles.size(); i++) {
             String fileName = workingFiles.get(i);
             if (!currentCommit().isContainFile(fileName)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
